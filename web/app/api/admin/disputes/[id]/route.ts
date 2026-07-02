@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
 import { recomputeCompanyRisk } from "@/lib/risk";
+import { recomputeCompanyRating } from "@/lib/reviews";
 
 const schema = z.object({
   action: z.enum(["corrected", "rejected"]),
@@ -45,16 +46,30 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
     .set({ status: action, resolvedAt: new Date(), resolution })
     .where(eq(tables.disputes.id, disputeId));
 
-  // Fast correction: a corrected signal comes down immediately.
-  if (action === "corrected" && dispute.targetType === "signal") {
-    const signal = await db.query.signals.findFirst({ where: eq(tables.signals.id, dispute.targetId) });
-    if (signal) {
-      await db
-        .update(tables.signals)
-        .set({ status: "rejected", reviewedBy: user.id, reviewedAt: new Date() })
-        .where(eq(tables.signals.id, signal.id));
-      await recomputeCompanyRisk(signal.companyId);
+  // Fast correction: an upheld dispute takes the offending content down immediately.
+  if (action === "corrected") {
+    if (dispute.targetType === "signal") {
+      const signal = await db.query.signals.findFirst({ where: eq(tables.signals.id, dispute.targetId) });
+      if (signal) {
+        await db
+          .update(tables.signals)
+          .set({ status: "rejected", reviewedBy: user.id, reviewedAt: new Date() })
+          .where(eq(tables.signals.id, signal.id));
+        await recomputeCompanyRisk(signal.companyId);
+      }
+    } else if (dispute.targetType === "review") {
+      // Lawful takedown — the ONLY path that removes a review (never casual suppression).
+      const review = await db.query.reviews.findFirst({ where: eq(tables.reviews.id, dispute.targetId) });
+      if (review) {
+        await db
+          .update(tables.reviews)
+          .set({ status: "removed_legal" })
+          .where(eq(tables.reviews.id, review.id));
+        if (review.subjectCompanyId) await recomputeCompanyRating(review.subjectCompanyId);
+      }
     }
+    // targetType 'check'/'profile' snapshots are point-in-time facts; the resolution
+    // note records the correction and the next re-check refreshes the underlying data.
   }
 
   return NextResponse.json({ ok: true });

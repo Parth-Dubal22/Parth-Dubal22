@@ -5,7 +5,7 @@
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { requireUser } from "@/lib/session";
-import { formatAbn, ratingX10ToNumber } from "@/lib/format";
+import { formatAbn, ratingX10ToNumber, hasVerifiedBadge } from "@/lib/format";
 import CustomerApp from "./CustomerApp";
 import type { CustomerMe, DirectoryBuilder, QuoteRequestItem } from "./types";
 
@@ -38,7 +38,7 @@ export default async function CustomerPage() {
     location: c.location ?? "",
     artKind: c.artKind,
     tags: c.tags,
-    verified: c.tier === "buildsafe_verified" || c.tier === "track_record",
+    verified: hasVerifiedBadge(c.tier),
     rating: ratingX10ToNumber(c.ratingAvg),
     reviewCount: c.reviewCount,
   }));

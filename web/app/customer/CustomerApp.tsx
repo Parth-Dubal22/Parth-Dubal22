@@ -342,9 +342,10 @@ export default function CustomerApp({
                   <div className="card">
                     <h3>What you&apos;ll see</h3>
                     <p>
-                      A colour-coded result with every signal cited to its public document,
-                      plus deposit guidance for Victoria (e.g. statutory deposit limits) before
-                      you hand money over.
+                      A plain-English snapshot of published facts — registration status, licence
+                      standing and a count of adverse public records, each linked to its source,
+                      with the date we checked. Keep deposits within Victoria&apos;s statutory limits
+                      and pay by stages.
                     </p>
                   </div>
                 )}
@@ -371,7 +372,7 @@ export default function CustomerApp({
                       <span className="avatar" style={{ background: "#2E5E8F" }}>{initials(r.companyName)}</span>
                       <div className="grow">
                         <b>Quote request — {r.companyName}</b>
-                        <span className="sub2">
+                        <span className="sub2" suppressHydrationWarning>
                           Sent {timeAgo(r.createdAt)}{r.verified ? " · VERIFIED BUILDER" : ""}
                         </span>
                       </div>

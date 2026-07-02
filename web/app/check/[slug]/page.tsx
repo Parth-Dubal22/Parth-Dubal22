@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { cache } from "react";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
-import { formatAbn, fmtDate } from "@/lib/format";
+import { formatAbn, fmtDate, money } from "@/lib/format";
 import LandingNav from "@/components/landing/LandingNav";
 
 /**
@@ -66,16 +66,30 @@ function SourceLinks({ sources }: { sources: { name: string; url?: string }[] })
   );
 }
 
+/** Victoria domestic-building statutory deposit limits (general info, not advice):
+ *  Domestic Building Contracts Act 1995 (Vic) — max 10% where contract price < $20,000,
+ *  otherwise max 5%. */
+function vicDepositCeiling(contractPrice: number): { pct: number; amount: number } {
+  const pct = contractPrice < 20000 ? 10 : 5;
+  return { pct, amount: Math.round((contractPrice * pct) / 100) };
+}
+
 export default async function CheckResultPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ deposit?: string }>;
 }) {
   const p = await params;
+  const sp = await searchParams;
   const data = await getCheck(p.slug);
   if (!data) notFound();
   const { check, companySlug } = data;
   const snap = check.snapshot;
+
+  const depositAmt = Number(sp.deposit);
+  const deposit = Number.isFinite(depositAmt) && depositAmt > 0 ? depositAmt : null;
 
   const found = check.companyId != null;
   const abnSource = snap.sources.find((s) => s.name === "ABN Lookup");
@@ -203,6 +217,23 @@ export default async function CheckResultPage({
               </div>
             </div>
           )}
+
+          {deposit ? (
+            <div className="card" style={{ marginTop: "1.6rem", borderLeft: "4px solid var(--clear)" }}>
+              <h3 style={{ marginBottom: ".4rem" }}>Your deposit: {money(deposit)}</h3>
+              <p style={{ margin: 0 }}>
+                For a Victorian domestic building contract of {money(deposit)}, the statutory
+                deposit ceiling is{" "}
+                <b>
+                  {vicDepositCeiling(deposit).pct}% ({money(vicDepositCeiling(deposit).amount)})
+                </b>{" "}
+                — {deposit < 20000 ? "contracts under $20,000" : "contracts of $20,000 or more"}{" "}
+                are capped by the Domestic Building Contracts Act 1995 (Vic). Pay by staged progress
+                claims tied to completed work, and re-check the builder before each stage. General
+                information only, not legal or financial advice.
+              </p>
+            </div>
+          ) : null}
 
           <p className="mono" style={{ fontSize: ".64rem", color: "var(--slate2)", marginTop: "1rem" }}>
             LAST CHECKED {fmtDate(checkedAt)} · RECORDS CAN CHANGE — RE-CHECK BEFORE PAYING

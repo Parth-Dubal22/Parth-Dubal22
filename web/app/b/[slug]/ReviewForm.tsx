@@ -22,6 +22,7 @@ export default function ReviewForm({
   const router = useRouter();
   const [rating, setRating] = useState(5);
   const [text, setText] = useState("");
+  const [paidOnTime, setPaidOnTime] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
 
   if (!viewer) {
@@ -29,7 +30,7 @@ export default function ReviewForm({
       <div className="card form" style={{ padding: "1.3rem", marginTop: "1rem" }}>
         <b style={{ fontFamily: "var(--fd)" }}>Write a review</b>
         <p className="hint" style={{ margin: 0 }}>
-          Reviews are verified against a real job before publishing — sign in to write one.
+          Reviews get a Verified badge when we can match them to a real job on the platform — sign in to write one.
         </p>
         <a className="btn btn-d" style={{ justifySelf: "start" }} href="/login">
           Sign in to write a review
@@ -62,16 +63,23 @@ export default function ReviewForm({
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ subjectCompanyId: companyId, rating, text: text.trim(), authorRole }),
+      body: JSON.stringify({
+        subjectCompanyId: companyId,
+        rating,
+        text: text.trim(),
+        authorRole,
+        ...(authorRole === "subcontractor" && paidOnTime !== null ? { paidOnTime } : {}),
+      }),
     });
     const j: { ok: boolean; error?: string } = await res
       .json()
       .catch(() => ({ ok: false, error: "Something went wrong" }));
     setBusy(false);
     if (j.ok) {
-      toast("Review submitted — published after verification");
+      toast("Review published — thanks for sharing");
       setText("");
       setRating(5);
+      setPaidOnTime(null);
       router.refresh();
     } else {
       toast(j.error || "Could not submit the review");
@@ -105,7 +113,8 @@ export default function ReviewForm({
         </select>
       </label>
       <label>
-        Your experience <span className="hint">— verified against a real job before publishing</span>
+        Your experience{" "}
+        <span className="hint">— we add a Verified badge when this matches a real job on the platform</span>
         <textarea
           id="r-t"
           placeholder="How was the build? Did payments run on time?"
@@ -114,6 +123,22 @@ export default function ReviewForm({
           onChange={(e) => setText(e.target.value)}
         ></textarea>
       </label>
+      {authorRole === "subcontractor" ? (
+        <label>
+          Were you paid on time?
+          <select
+            id="r-paid"
+            value={paidOnTime === null ? "" : paidOnTime ? "yes" : "no"}
+            onChange={(e) =>
+              setPaidOnTime(e.target.value === "" ? null : e.target.value === "yes")
+            }
+          >
+            <option value="">Prefer not to say</option>
+            <option value="yes">Yes — paid on time</option>
+            <option value="no">No — payment was late</option>
+          </select>
+        </label>
+      ) : null}
       <button className="btn btn-d" style={{ justifySelf: "start" }} disabled={busy}>
         Submit review
       </button>

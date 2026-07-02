@@ -8,9 +8,10 @@
  *  - Recomputes company ratingAvg (x10) / reviewCount after insert. */
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { and, avg, count, eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { recomputeCompanyRating } from "@/lib/reviews";
 
 const schema = z.object({
   subjectCompanyId: z.number().int().positive().optional(),
@@ -30,17 +31,6 @@ const ROLE_MAP: Record<string, "homeowner" | "subcontractor" | "builder"> = {
 
 function bad(error: string, status = 400) {
   return NextResponse.json({ ok: false, error }, { status });
-}
-
-/** Recompute ratingAvg (x10 int) and reviewCount from published reviews. */
-async function recomputeCompanyRating(companyId: number) {
-  const [agg] = await db
-    .select({ avg: avg(tables.reviews.rating), n: count() })
-    .from(tables.reviews)
-    .where(and(eq(tables.reviews.subjectCompanyId, companyId), eq(tables.reviews.status, "published")));
-  const n = Number(agg?.n ?? 0);
-  const ratingAvg = n > 0 && agg?.avg != null ? Math.round(Number(agg.avg) * 10) : null;
-  await db.update(tables.companies).set({ ratingAvg, reviewCount: n }).where(eq(tables.companies.id, companyId));
 }
 
 export async function POST(req: Request) {

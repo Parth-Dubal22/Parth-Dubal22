@@ -35,6 +35,9 @@ function bad(error: string, status = 400) {
   return NextResponse.json({ ok: false, error }, { status });
 }
 
+/** Thrown inside the registration transaction when the ABN's company is already claimed. */
+class AlreadyClaimedError extends Error {}
+
 export async function POST(req: Request) {
   let raw: unknown;
   try {
@@ -103,13 +106,17 @@ export async function POST(req: Request) {
         });
         let companyId: number;
         if (found) {
-          companyId = found.id;
-          if (!found.claimedByUserId) {
-            await tx
-              .update(tables.companies)
-              .set({ claimedByUserId: user.id })
-              .where(eq(tables.companies.id, found.id));
+          // A company record already exists for this ABN. If someone has already
+          // claimed it, do NOT attach this new account to it — that would let an
+          // impostor post jobs and reply to reviews as the real business.
+          if (found.claimedByUserId) {
+            throw new AlreadyClaimedError();
           }
+          companyId = found.id;
+          await tx
+            .update(tables.companies)
+            .set({ claimedByUserId: user.id })
+            .where(eq(tables.companies.id, found.id));
         } else {
           let slug = slugify(companyName) || `builder-${builderAbn}`;
           const slugTaken = await tx.query.companies.findFirst({
@@ -134,6 +141,12 @@ export async function POST(req: Request) {
       }
     });
   } catch (err: unknown) {
+    if (err instanceof AlreadyClaimedError) {
+      return bad(
+        "That ABN is already registered to a BuildSafe account. If this is your business, contact support to claim it.",
+        409,
+      );
+    }
     // Unique-violation race on email (or slug) → clear message, not a 500.
     const code = (err as { code?: string })?.code;
     if (code === "23505") {

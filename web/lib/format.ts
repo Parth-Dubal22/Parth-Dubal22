@@ -32,6 +32,20 @@ export function slugify(name: string): string {
 export const ratingX10ToNumber = (x10: number | null | undefined) =>
   x10 == null ? null : Math.round(x10) / 10;
 
+/** A company carries the "Verified" badge once it has cleared any verification tier
+ *  (ID Verified → BuildSafe Verified → Verified + Track Record). Single source of truth
+ *  so every public surface (directory, job cards, profile) agrees. */
+export const hasVerifiedBadge = (tier: string | null | undefined) =>
+  tier != null && tier !== "none";
+
+/** Human label for a verification tier. */
+export const TIER_LABEL: Record<string, string> = {
+  none: "Unverified",
+  id_verified: "ID Verified",
+  buildsafe_verified: "BuildSafe Verified",
+  track_record: "Verified + Track Record",
+};
+
 export const ALL_TRADES = [
   "Tiling", "Bricklaying", "Carpentry", "Electrical", "Plumbing", "Rendering",
   "Concreting", "Plastering", "Painting", "Roofing", "Landscaping", "Labouring",

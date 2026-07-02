@@ -77,7 +77,7 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
           <a className={`chip${typeF === "" ? " on" : ""}`} href={chipHref("")} aria-current={typeF === "" ? "true" : undefined}>All</a>
           <a className={`chip${typeF === "day" ? " on" : ""}`} href={chipHref("day")} aria-current={typeF === "day" ? "true" : undefined}>Day hire</a>
           <a className={`chip${typeF === "sub" ? " on" : ""}`} href={chipHref("sub")} aria-current={typeF === "sub" ? "true" : undefined}>Subcontract</a>
-          <span style={{ marginLeft: "auto" }} className="hint">Builder pay-status shown on every job — apply free.</span>
+          <span style={{ marginLeft: "auto" }} className="hint">Subscribers see builder pay-status on every job — applying is always free.</span>
         </div>
 
         <form method="get" action="/jobs" className="filters" aria-label="Filter jobs">

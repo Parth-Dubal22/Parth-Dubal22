@@ -250,12 +250,12 @@ export default async function BuilderProfilePage({
 
           <div>
             <h3 style={{ margin: ".6rem 0 .8rem" }}>
-              Reviews <span className="hint">({reviews.length} shown · verified)</span>
+              Reviews <span className="hint">({reviews.length})</span>
             </h3>
             <div className="list">
               {reviews.length === 0 ? (
                 <div className="card">
-                  <p>No reviews yet — be the first (reviews are verified against real jobs).</p>
+                  <p>No reviews yet — be the first. Reviews we can match to a real job on the platform carry a Verified badge.</p>
                 </div>
               ) : (
                 reviews.map((r) => {
@@ -271,6 +271,11 @@ export default async function BuilderProfilePage({
                           <span className="pill navy" style={{ marginLeft: ".3rem" }}>
                             {ROLE_LABEL[r.authorRole] ?? r.authorRole}
                           </span>
+                          {r.verified ? (
+                            <span className="pill ok" style={{ marginLeft: ".3rem" }}>
+                              Verified job
+                            </span>
+                          ) : null}
                         </div>
                         <span style={{ marginLeft: "auto" }}>
                           <Stars rating={r.rating} />
@@ -297,9 +302,9 @@ export default async function BuilderProfilePage({
         </div>
         <p className="f-legal" style={{ marginTop: "2.5rem" }}>
           Public-record signals are facts from published sources (linked). Status ratings are
-          BuildSafe&rsquo;s opinion based on those disclosed records. Reviews are verified against
-          real transactions; builders may respond publicly and may request corrections at any time.
-          Demo page with sample data.
+          BuildSafe&rsquo;s opinion based on those disclosed records. Reviews carry a Verified
+          badge where we can match them to a real transaction on the platform; builders may respond
+          publicly and may request corrections at any time. Demo page with sample data.
         </p>
       </div>
     </>

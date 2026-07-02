@@ -133,7 +133,7 @@ export default async function Landing() {
                 </div>
                 <div className="p-body">
                   <div className="mcard" style={{ borderLeft: "4px solid var(--risk)" }}>
-                    <b>⚠ Alert · Harbourline Constructions</b>
+                    <b>Alert · a builder on your watchlist</b>
                     <span>COURT FILING · $42,300 EXPOSED · SOURCE →</span>
                   </div>
                   <div className="mcard">

@@ -344,7 +344,7 @@ function AlertCard({ a, onRead }: { a: TradieAlert; onRead: () => void }) {
           · {fmtDate(a.occurredOn)}
         </div>
       </div>
-      <span className="mono" style={{ fontSize: ".62rem", color: "var(--slate2)" }}>
+      <span className="mono" style={{ fontSize: ".62rem", color: "var(--slate2)" }} suppressHydrationWarning>
         {timeAgo(a.createdAt)}
       </span>
       {a.read ? (
