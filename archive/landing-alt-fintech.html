@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildSafe — Know your builder is solvent, before it's your problem</title>
+<meta name="description" content="BuildSafe monitors Australian builders for financial distress signals — court filings, ASIC notices, licence changes — and alerts you before a collapse takes your money with it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   BUILDSAFE v2 — premium fintech × construction
+   Palette: Deep Harbour navy · Paper white · Signal orange ·
+   semantic risk colours. Type: Space Grotesk / Inter / JetBrains Mono
+   ============================================================ */
+:root{
+  --navy:#0A1B2E;
+  --navy-2:#0F2440;
+  --ink:#0B1524;
+  --slate:#51607A;
+  --slate-2:#6E7D93;
+  --paper:#FFFFFF;
+  --mist:#F5F7FB;
+  --cloud:#E8EDF5;
+  --line:#E2E8F2;
+  --orange:#FF5A1F;
+  --orange-soft:#FFF0E9;
+  --risk:#E5484D;
+  --risk-soft:#FDEBEC;
+  --watch:#E9950C;
+  --watch-soft:#FEF4E2;
+  --clear:#149E5F;
+  --clear-soft:#E6F6EF;
+  --radius:16px;
+  --radius-lg:24px;
+  --shadow-sm:0 1px 2px rgba(10,27,46,.06),0 2px 8px rgba(10,27,46,.05);
+  --shadow-md:0 6px 24px rgba(10,27,46,.10);
+  --shadow-lg:0 24px 64px -12px rgba(10,27,46,.22);
+  --shadow-float:0 32px 80px -16px rgba(10,27,46,.30);
+  --font-d:"Space Grotesk",sans-serif;
+  --font-b:"Inter",sans-serif;
+  --font-m:"JetBrains Mono",monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);color:var(--ink);background:var(--paper);line-height:1.6;-webkit-font-smoothing:antialiased}
+img,svg{display:block;max-width:100%}
+a{text-decoration:none;color:inherit}
+button{font:inherit;cursor:pointer;border:none;background:none;color:inherit}
+input{font:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:3px;border-radius:6px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}html{scroll-behavior:auto}}
+
+.wrap{width:min(1180px,92%);margin-inline:auto}
+h1,h2,h3{font-family:var(--font-d);line-height:1.05;letter-spacing:-.02em;font-weight:700}
+h1{font-size:clamp(2.6rem,5.6vw,4.3rem)}
+h2{font-size:clamp(1.9rem,3.6vw,2.8rem)}
+.sub{color:var(--slate);font-size:1.13rem;line-height:1.65}
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--font-m);font-size:.72rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);background:var(--orange-soft);padding:.42rem .8rem;border-radius:99px}
+.eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange)}
+
+/* ---------- reveal animation ---------- */
+.rv{opacity:0;transform:translateY(26px);transition:opacity .7s cubic-bezier(.2,.7,.2,1),transform .7s cubic-bezier(.2,.7,.2,1)}
+.rv.in{opacity:1;transform:none}
+.rv.d1{transition-delay:.08s}.rv.d2{transition-delay:.16s}.rv.d3{transition-delay:.24s}
+
+/* ---------- nav ---------- */
+.nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.78);backdrop-filter:blur(14px) saturate(1.4);border-bottom:1px solid rgba(226,232,242,.8)}
+.nav .wrap{display:flex;align-items:center;justify-content:space-between;height:72px}
+.logo{display:flex;align-items:center;gap:.6rem;font-family:var(--font-d);font-weight:700;font-size:1.28rem;letter-spacing:-.02em}
+.logo-mark{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--orange),#FF8452);display:grid;place-items:center;box-shadow:0 4px 12px rgba(255,90,31,.35)}
+.logo-mark svg{width:18px;height:18px}
+.nav-links{display:flex;align-items:center;gap:2rem}
+.nav-links a{font-size:.94rem;font-weight:500;color:var(--slate);transition:color .15s}
+.nav-links a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:600;font-size:.95rem;padding:.72rem 1.35rem;border-radius:12px;transition:transform .15s,box-shadow .15s,background .15s}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:var(--orange);color:#fff;box-shadow:0 8px 20px -6px rgba(255,90,31,.5)}
+.btn-primary:hover{background:#FF6B35;box-shadow:0 12px 28px -6px rgba(255,90,31,.55)}
+.btn-dark{background:var(--navy);color:#fff;box-shadow:var(--shadow-md)}
+.btn-dark:hover{background:var(--navy-2)}
+.btn-ghost{border:1.5px solid var(--line);color:var(--ink);background:#fff}
+.btn-ghost:hover{border-color:var(--slate-2)}
+.btn-lg{padding:.95rem 1.7rem;font-size:1.02rem;border-radius:14px}
+.nav-burger{display:none;flex-direction:column;gap:5px;padding:.5rem}
+.nav-burger span{width:22px;height:2px;background:var(--ink);border-radius:2px}
+
+/* ---------- hero ---------- */
+.hero{position:relative;overflow:hidden;padding:5.5rem 0 7.5rem;
+  background:
+    radial-gradient(1100px 600px at 78% -10%,rgba(255,90,31,.09),transparent 55%),
+    radial-gradient(900px 500px at -10% 40%,rgba(15,36,64,.06),transparent 55%),
+    linear-gradient(180deg,#FFFFFF 0%,var(--mist) 100%);
+}
+.hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(rgba(10,27,46,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(10,27,46,.035) 1px,transparent 1px);
+  background-size:52px 52px;
+  mask-image:radial-gradient(800px 500px at 70% 20%,rgba(0,0,0,.8),transparent 75%)}
+.hero .wrap{position:relative;display:grid;grid-template-columns:1.02fr .98fr;gap:4rem;align-items:center}
+.hero-copy .eyebrow{margin-bottom:1.4rem}
+.hero-copy h1 em{font-style:normal;background:linear-gradient(120deg,var(--orange),#FF8452);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero-copy .sub{margin:1.4rem 0 2rem;max-width:52ch}
+.search{display:flex;background:#fff;border:1.5px solid var(--line);border-radius:16px;padding:.45rem;max-width:540px;box-shadow:var(--shadow-md);transition:border-color .15s,box-shadow .15s}
+.search:focus-within{border-color:var(--orange);box-shadow:0 0 0 4px rgba(255,90,31,.12),var(--shadow-md)}
+.search input{flex:1;border:none;outline:none;padding:.7rem 1rem;font-size:1rem;background:transparent;min-width:0}
+.search input::placeholder{color:var(--slate-2)}
+.hero-trust{display:flex;align-items:center;gap:1.5rem;margin-top:1.4rem;flex-wrap:wrap}
+.hero-trust span{display:flex;align-items:center;gap:.45rem;font-size:.85rem;color:var(--slate);font-weight:500}
+.hero-trust svg{width:16px;height:16px;color:var(--clear)}
+
+/* ----- hero visual stack (CSS product mockups) ----- */
+.hero-visual{position:relative;min-height:520px}
+.browser{position:absolute;top:0;right:0;width:min(560px,100%);background:#fff;border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);border:1px solid var(--line);overflow:hidden}
+.browser-bar{display:flex;align-items:center;gap:.9rem;padding:.8rem 1.1rem;border-bottom:1px solid var(--line);background:var(--mist)}
+.dots{display:flex;gap:6px}
+.dots i{width:10px;height:10px;border-radius:50%;background:var(--cloud)}
+.dots i:nth-child(1){background:#FF5F57}.dots i:nth-child(2){background:#FEBC2E}.dots i:nth-child(3){background:#28C840}
+.urlbar{flex:1;background:#fff;border:1px solid var(--line);border-radius:8px;font-family:var(--font-m);font-size:.68rem;color:var(--slate-2);padding:.35rem .7rem;display:flex;align-items:center;gap:.45rem}
+.urlbar svg{width:11px;height:11px;color:var(--clear)}
+.dash{display:grid;grid-template-columns:150px 1fr}
+.dash-side{background:var(--navy);padding:1.1rem .9rem;display:flex;flex-direction:column;gap:.3rem}
+.dash-side .s-logo{display:flex;align-items:center;gap:.5rem;color:#fff;font-family:var(--font-d);font-weight:600;font-size:.85rem;margin-bottom:1rem}
+.dash-side .s-logo i{width:20px;height:20px;border-radius:6px;background:var(--orange);display:grid;place-items:center;font-size:.6rem;color:#fff}
+.s-item{display:flex;align-items:center;gap:.55rem;color:#93A5C0;font-size:.72rem;font-weight:500;padding:.5rem .6rem;border-radius:8px}
+.s-item.on{background:rgba(255,255,255,.10);color:#fff}
+.s-item i{width:6px;height:6px;border-radius:2px;background:currentColor;opacity:.7}
+.dash-main{padding:1.1rem 1.2rem 1.3rem}
+.dash-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.9rem}
+.dash-head b{font-family:var(--font-d);font-size:.95rem}
+.dash-head span{font-family:var(--font-m);font-size:.6rem;color:var(--slate-2);letter-spacing:.08em}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1rem}
+.kpi{background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:.65rem .75rem}
+.kpi small{font-size:.58rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-2)}
+.kpi b{display:block;font-family:var(--font-d);font-size:1.05rem;margin-top:.1rem}
+.kpi b.risk{color:var(--risk)}.kpi b.ok{color:var(--clear)}
+.row{display:flex;align-items:center;gap:.7rem;padding:.6rem .2rem;border-bottom:1px solid var(--line);font-size:.74rem}
+.row:last-child{border-bottom:none}
+.avatar{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;font-family:var(--font-d);font-weight:600;font-size:.62rem;color:#fff;flex-shrink:0}
+.row .nm{font-weight:600;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .nm small{display:block;font-family:var(--font-m);font-weight:400;font-size:.56rem;color:var(--slate-2)}
+.spark{width:54px;height:18px;flex-shrink:0}
+.pill{font-family:var(--font-m);font-size:.56rem;font-weight:600;letter-spacing:.06em;padding:.26rem .5rem;border-radius:6px;white-space:nowrap}
+.pill.risk{background:var(--risk-soft);color:var(--risk)}
+.pill.watch{background:var(--watch-soft);color:var(--watch)}
+.pill.ok{background:var(--clear-soft);color:var(--clear)}
+
+/* floating phone alert */
+.phone{position:absolute;bottom:-24px;left:-6px;width:250px;background:linear-gradient(160deg,#101E33,#0A1B2E);border-radius:30px;padding:.65rem;box-shadow:var(--shadow-float);border:1px solid rgba(255,255,255,.08);animation:floaty 7s ease-in-out infinite}
+.phone-screen{background:linear-gradient(180deg,#13243D,#0C1B30);border-radius:24px;padding:1rem .8rem 1.2rem;position:relative;overflow:hidden}
+.notch{width:76px;height:18px;background:#0A1526;border-radius:99px;margin:0 auto .9rem}
+.p-time{font-family:var(--font-d);color:#fff;text-align:center;font-size:1.7rem;font-weight:600;letter-spacing:.02em}
+.p-date{color:#7C8DA8;text-align:center;font-size:.62rem;margin-bottom:1rem}
+.notif{background:rgba(255,255,255,.97);border-radius:14px;padding:.7rem .75rem;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.notif-top{display:flex;align-items:center;gap:.45rem;margin-bottom:.35rem}
+.notif-top i{width:16px;height:16px;border-radius:5px;background:var(--orange);display:grid;place-items:center}
+.notif-top i svg{width:9px;height:9px}
+.notif-top b{font-size:.6rem;letter-spacing:.04em;color:var(--slate);font-weight:600}
+.notif-top span{margin-left:auto;font-size:.56rem;color:var(--slate-2)}
+.notif h5{font-size:.72rem;color:var(--ink);line-height:1.35}
+.notif p{font-size:.62rem;color:var(--slate);margin-top:.15rem;line-height:1.4}
+.notif .tagline{display:inline-block;margin-top:.4rem;font-family:var(--font-m);font-size:.54rem;font-weight:600;color:var(--risk);background:var(--risk-soft);padding:.2rem .45rem;border-radius:5px}
+@keyframes floaty{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-12px) rotate(-2deg)}}
+
+/* floating toast */
+.toast{position:absolute;top:42%;right:-10px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);border:1px solid rgba(226,232,242,.9);border-radius:14px;padding:.7rem .9rem;display:flex;align-items:center;gap:.6rem;box-shadow:var(--shadow-lg);animation:floaty 8s ease-in-out 1.2s infinite}
+.toast i{width:30px;height:30px;border-radius:9px;background:var(--clear-soft);display:grid;place-items:center;color:var(--clear)}
+.toast b{font-size:.74rem;display:block}
+.toast span{font-size:.62rem;color:var(--slate)}
+
+/* ---------- logo ticker ---------- */
+.trustband{padding:2.6rem 0;border-block:1px solid var(--line);background:#fff;overflow:hidden}
+.trustband p{text-align:center;font-family:var(--font-m);font-size:.66rem;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--slate-2);margin-bottom:1.5rem}
+.ticker{display:flex;gap:4.5rem;width:max-content;animation:tick 30s linear infinite;align-items:center}
+.ticker:hover{animation-play-state:paused}
+.tlogo{display:flex;align-items:center;gap:.5rem;font-family:var(--font-d);font-weight:600;font-size:1.05rem;color:#AEB9C9;white-space:nowrap;filter:grayscale(1);transition:color .2s}
+.tlogo:hover{color:var(--slate)}
+.tlogo i{width:22px;height:22px;border-radius:6px;background:currentColor;opacity:.28}
+@keyframes tick{to{transform:translateX(-50%)}}
+
+/* ---------- stats ---------- */
+.stats{background:var(--navy);color:#fff;padding:4.5rem 0;position:relative;overflow:hidden}
+.stats::before{content:"";position:absolute;inset:0;background:radial-gradient(700px 300px at 20% 0%,rgba(255,90,31,.15),transparent 60%)}
+.stats .wrap{position:relative;display:grid;grid-template-columns:1.1fr 2fr;gap:3rem;align-items:center}
+.stats h2{color:#fff}
+.stats .sub{color:#9DB0CC}
+.statgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem}
+.stat{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.09);backdrop-filter:blur(8px);border-radius:var(--radius);padding:1.5rem 1.4rem}
+.stat b{font-family:var(--font-d);font-size:clamp(1.9rem,3vw,2.6rem);display:block;letter-spacing:-.02em}
+.stat b em{font-style:normal;color:var(--orange)}
+.stat span{font-size:.84rem;color:#9DB0CC;line-height:1.45;display:block;margin-top:.3rem}
+
+/* ---------- bento ---------- */
+.bento-sec{padding:6rem 0;background:var(--mist)}
+.sec-head{max-width:640px;margin:0 auto 3.2rem;text-align:center;display:grid;gap:1rem;justify-items:center}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(120px,auto);gap:1.1rem}
+.cell{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);padding:1.8rem;box-shadow:var(--shadow-sm);transition:transform .25s,box-shadow .25s;position:relative;overflow:hidden}
+.cell:hover{transform:translateY(-4px);box-shadow:var(--shadow-lg)}
+.cell h3{font-size:1.22rem;margin-bottom:.45rem;letter-spacing:-.01em}
+.cell p{color:var(--slate);font-size:.93rem;line-height:1.55}
+.cell .ic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;margin-bottom:1rem}
+.c-watch{grid-column:span 4;grid-row:span 2;display:grid;grid-template-columns:1fr 1fr;gap:1.6rem;align-items:center}
+.c-check{grid-column:span 2;grid-row:span 2}
+.c-expo{grid-column:span 2}
+.c-alert{grid-column:span 2}
+.c-jobs{grid-column:span 2}
+.mini-dash{background:var(--mist);border:1px solid var(--line);border-radius:14px;padding:.9rem;align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.mini-dash .row{font-size:.7rem;padding:.5rem .1rem}
+.mini-search{background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:.55rem .7rem;display:flex;align-items:center;gap:.5rem;font-family:var(--font-m);font-size:.68rem;color:var(--slate-2);margin-top:1.1rem}
+.mini-search .caret{width:7px;height:13px;background:var(--orange);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.mini-result{margin-top:.7rem;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mini-result .mr-band{background:var(--clear);color:#fff;font-family:var(--font-m);font-size:.58rem;font-weight:600;letter-spacing:.1em;padding:.35rem .7rem}
+.mini-result .mr-body{padding:.6rem .7rem;font-size:.68rem}
+.mini-result .mr-body b{display:block;font-size:.74rem}
+.mini-result .mr-body span{font-family:var(--font-m);font-size:.56rem;color:var(--slate-2)}
+.expo-bars{display:flex;align-items:flex-end;gap:.45rem;height:64px;margin-top:1rem}
+.expo-bars i{flex:1;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,var(--orange),#FFB08C)}
+.expo-bars i:nth-child(1){height:36%}.expo-bars i:nth-child(2){height:58%}.expo-bars i:nth-child(3){height:44%}.expo-bars i:nth-child(4){height:88%;background:linear-gradient(180deg,var(--risk),#F79EA2)}.expo-bars i:nth-child(5){height:64%}
+.expo-cap{display:flex;justify-content:space-between;font-family:var(--font-m);font-size:.56rem;color:var(--slate-2);margin-top:.4rem}
+.msg{background:var(--mist);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:.7rem .8rem;font-size:.74rem;line-height:1.5;margin-top:1rem;position:relative}
+.msg b{color:var(--risk)}
+.msg small{display:block;font-family:var(--font-m);font-size:.56rem;color:var(--slate-2);margin-top:.35rem}
+.jobtag{display:flex;align-items:center;justify-content:space-between;background:var(--mist);border:1px solid var(--line);border-radius:12px;padding:.6rem .75rem;margin-top:1rem;font-size:.72rem}
+.jobtag b{display:block;font-size:.76rem}
+.jobtag span{font-family:var(--font-m);font-size:.56rem;color:var(--slate-2)}
+.jobtag .rate{font-family:var(--font-d);font-weight:600;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:8px;padding:.25rem .5rem}
+
+/* ---------- split feature ---------- */
+.split{padding:6rem 0}
+.split .wrap{display:grid;grid-template-columns:1fr 1fr;gap:4.5rem;align-items:center}
+.split.flip .wrap>div:first-child{order:2}
+.split .sub{margin:1.2rem 0 1.6rem}
+.checks{display:grid;gap:.85rem}
+.checks li{list-style:none;display:flex;gap:.7rem;align-items:flex-start;font-size:.97rem;color:var(--ink)}
+.checks li svg{width:20px;height:20px;color:var(--clear);flex-shrink:0;margin-top:2px}
+.timeline-card{background:#fff;border:1px solid var(--line);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);padding:1.8rem}
+.timeline-card h4{font-family:var(--font-d);font-size:1rem;margin-bottom:1.2rem;display:flex;justify-content:space-between;align-items:center}
+.timeline-card h4 span{font-family:var(--font-m);font-size:.6rem;color:var(--slate-2);letter-spacing:.08em}
+.tl{display:grid;gap:0;position:relative;padding-left:1.4rem}
+.tl::before{content:"";position:absolute;left:8px;top:8px;bottom:8px;width:2px;background:var(--line)}
+.tl-item{position:relative;padding:.7rem 0 .7rem .6rem}
+.tl-item::before{content:"";position:absolute;left:-1.4rem;top:1rem;width:18px;height:18px;border-radius:50%;border:4px solid #fff;box-shadow:var(--shadow-sm)}
+.tl-item.risk::before{background:var(--risk)}
+.tl-item.watch::before{background:var(--watch)}
+.tl-item.ok::before{background:var(--clear)}
+.tl-item b{font-size:.86rem;display:block}
+.tl-item p{font-size:.78rem;color:var(--slate)}
+.tl-item small{font-family:var(--font-m);font-size:.6rem;color:var(--slate-2);letter-spacing:.06em}
+
+/* ---------- trust/security band ---------- */
+.secure{padding:5.5rem 0;background:linear-gradient(180deg,#fff, var(--mist))}
+.secure-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem}
+.secure .cell{padding:2rem}
+
+/* ---------- testimonial ---------- */
+.quote-sec{padding:5.5rem 0;background:var(--navy);color:#fff;position:relative;overflow:hidden}
+.quote-sec::before{content:"";position:absolute;inset:0;background:radial-gradient(600px 300px at 85% 100%,rgba(255,90,31,.14),transparent 60%)}
+.quote{position:relative;max-width:820px;margin-inline:auto;text-align:center}
+.quote blockquote{font-family:var(--font-d);font-size:clamp(1.4rem,2.8vw,2rem);line-height:1.35;font-weight:500;letter-spacing:-.01em}
+.quote blockquote em{font-style:normal;color:var(--orange)}
+.quote figcaption{margin-top:1.6rem;display:flex;align-items:center;justify-content:center;gap:.9rem;color:#9DB0CC;font-size:.9rem}
+.quote figcaption i{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--orange),#FF9868);display:grid;place-items:center;font-family:var(--font-d);font-weight:600;color:#fff}
+
+/* ---------- CTA ---------- */
+.cta{padding:6.5rem 0}
+.cta-card{position:relative;overflow:hidden;background:var(--navy);border-radius:28px;padding:4rem 3rem;text-align:center;color:#fff;box-shadow:var(--shadow-float)}
+.cta-card::before{content:"";position:absolute;inset:0;background:
+  radial-gradient(500px 240px at 15% 0%,rgba(255,90,31,.25),transparent 60%),
+  radial-gradient(500px 240px at 85% 100%,rgba(255,90,31,.18),transparent 60%)}
+.cta-card>*{position:relative}
+.cta-card h2{color:#fff;max-width:18ch;margin-inline:auto}
+.cta-card .sub{color:#9DB0CC;max-width:52ch;margin:1.2rem auto 2rem}
+.cta-card .search{margin-inline:auto;border:none}
+
+/* ---------- footer ---------- */
+footer{padding:3.5rem 0 2.5rem;border-top:1px solid var(--line);background:#fff}
+.f-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:2.5rem;margin-bottom:2.5rem}
+footer h5{font-family:var(--font-m);font-size:.66rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--slate-2);margin-bottom:1rem}
+footer ul{list-style:none;display:grid;gap:.6rem;font-size:.9rem}
+footer ul a{color:var(--slate)}footer ul a:hover{color:var(--ink)}
+.f-legal{border-top:1px solid var(--line);padding-top:1.5rem;font-size:.78rem;color:var(--slate-2);line-height:1.6}
+
+/* ---------- responsive ---------- */
+@media(max-width:1020px){
+  .hero .wrap{grid-template-columns:1fr;gap:3.5rem}
+  .hero-visual{min-height:0;padding-bottom:80px}
+  .browser{position:relative;width:100%}
+  .phone{bottom:-60px;left:0;width:220px}
+  .toast{top:auto;bottom:-30px;right:0}
+  .stats .wrap{grid-template-columns:1fr}
+  .c-watch{grid-column:span 6;grid-template-columns:1fr 1fr}
+  .c-check{grid-column:span 3}
+  .c-expo,.c-alert{grid-column:span 3}
+  .c-jobs{grid-column:span 6}
+  .split .wrap{grid-template-columns:1fr;gap:3rem}
+  .split.flip .wrap>div:first-child{order:0}
+  .secure-grid{grid-template-columns:1fr}
+  .f-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:640px){
+  .nav-links{display:none}
+  .nav-burger{display:flex}
+  .statgrid{grid-template-columns:1fr}
+  .c-watch{grid-template-columns:1fr}
+  .search{flex-direction:column;padding:.6rem}
+  .search .btn{width:100%}
+  .cta-card{padding:3rem 1.5rem}
+  .bento{grid-template-columns:1fr}
+  .cell,.c-watch,.c-check,.c-expo,.c-alert,.c-jobs{grid-column:span 1!important}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<header class="nav">
+  <div class="wrap">
+    <a class="logo" href="#">
+      <span class="logo-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+      </span>
+      BuildSafe
+    </a>
+    <nav class="nav-links">
+      <a href="#product">Product</a>
+      <a href="#how">How it works</a>
+      <a href="#security">Security</a>
+      <a href="#pricing">Pricing</a>
+      <a class="btn btn-primary" href="#check">Free builder check</a>
+    </nav>
+    <button class="nav-burger" aria-label="Menu"><span></span><span></span><span></span></button>
+  </div>
+</header>
+
+<!-- HERO -->
+<section class="hero" id="check">
+  <div class="wrap">
+    <div class="hero-copy">
+      <span class="eyebrow rv">Financial early-warning for construction</span>
+      <h1 class="rv d1">Know your builder is <em>solvent</em> — before it's your problem.</h1>
+      <p class="sub rv d2">2,970 building companies collapsed last financial year, taking subbies' invoices and homeowners' deposits with them. BuildSafe watches the public record 24/7 and alerts you the moment a builder shows distress signals.</p>
+      <form class="search rv d3" id="hero-search" role="search" aria-label="Free builder check">
+        <input type="text" id="hero-q" placeholder="Enter a builder's name or ABN…" aria-label="Builder name or ABN">
+        <button class="btn btn-primary btn-lg" type="submit">Check free</button>
+      </form>
+      <div class="hero-trust rv d3">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> Free forever</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> No card required</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> Sources on every signal</span>
+      </div>
+    </div>
+
+    <!-- CSS-built product visuals -->
+    <div class="hero-visual rv d2" aria-hidden="true">
+      <!-- dashboard mockup -->
+      <div class="browser">
+        <div class="browser-bar">
+          <div class="dots"><i></i><i></i><i></i></div>
+          <div class="urlbar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg> app.buildsafe.au/watchlist</div>
+        </div>
+        <div class="dash">
+          <div class="dash-side">
+            <div class="s-logo"><i>✓</i> BuildSafe</div>
+            <div class="s-item on"><i></i> Watchlist</div>
+            <div class="s-item"><i></i> Exposure</div>
+            <div class="s-item"><i></i> Alerts</div>
+            <div class="s-item"><i></i> Job board</div>
+            <div class="s-item"><i></i> Reports</div>
+          </div>
+          <div class="dash-main">
+            <div class="dash-head"><b>Your watchlist</b><span>UPDATED 2 MIN AGO</span></div>
+            <div class="kpis">
+              <div class="kpi"><small>Watched</small><b>7</b></div>
+              <div class="kpi"><small>Exposure</small><b>$96k</b></div>
+              <div class="kpi"><small>Alerts</small><b class="risk">1 new</b></div>
+            </div>
+            <div class="row">
+              <span class="avatar" style="background:#E5484D">HC</span>
+              <span class="nm">Harbourline Constructions<small>ABN 51 824 753 190 · $42,300 exposed</small></span>
+              <svg class="spark" viewBox="0 0 54 18"><polyline points="0,6 9,7 18,6 27,9 36,11 45,14 54,16" fill="none" stroke="#E5484D" stroke-width="2"/></svg>
+              <span class="pill risk">ALERT</span>
+            </div>
+            <div class="row">
+              <span class="avatar" style="background:#E9950C">BB</span>
+              <span class="nm">Bassline Building Group<small>ABN 72 610 442 887 · $18,900 exposed</small></span>
+              <svg class="spark" viewBox="0 0 54 18"><polyline points="0,10 9,9 18,11 27,9 36,10 45,8 54,9" fill="none" stroke="#E9950C" stroke-width="2"/></svg>
+              <span class="pill watch">WATCH</span>
+            </div>
+            <div class="row">
+              <span class="avatar" style="background:#149E5F">RH</span>
+              <span class="nm">Redgum Homes (Aus)<small>ABN 38 559 201 664 · $34,800 exposed</small></span>
+              <svg class="spark" viewBox="0 0 54 18"><polyline points="0,9 9,8 18,9 27,7 36,8 45,6 54,6" fill="none" stroke="#149E5F" stroke-width="2"/></svg>
+              <span class="pill ok">CLEAR</span>
+            </div>
+            <div class="row">
+              <span class="avatar" style="background:#149E5F">SP</span>
+              <span class="nm">Southpoint Projects<small>ABN 19 407 226 315 · monitoring only</small></span>
+              <svg class="spark" viewBox="0 0 54 18"><polyline points="0,8 9,9 18,8 27,8 36,7 45,8 54,7" fill="none" stroke="#149E5F" stroke-width="2"/></svg>
+              <span class="pill ok">CLEAR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- floating phone -->
+      <div class="phone">
+        <div class="phone-screen">
+          <div class="notch"></div>
+          <div class="p-time">7:42</div>
+          <div class="p-date">Tuesday, 14 July</div>
+          <div class="notif">
+            <div class="notif-top">
+              <i><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></i>
+              <b>BUILDSAFE</b><span>now</span>
+            </div>
+            <h5><svg style="display:inline;vertical-align:-2px" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#E5484D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg> New signal: Harbourline Constructions</h5>
+            <p>Creditor's claim filed — Supreme Court of Vic. You have $42,300 exposed. Source attached.</p>
+            <span class="tagline">ACT NOW · VIEW OPTIONS</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- floating toast -->
+      <div class="toast">
+        <i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></i>
+        <div><b>Redgum Homes re-verified</b><span>All registers clear · 30 Jun</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LOGO TICKER -->
+<section class="trustband" aria-label="Trusted by">
+  <p>Built for the trades that keep Australia building</p>
+  <div class="ticker">
+    <span class="tlogo"><i></i>Meridian Tiling Co.</span>
+    <span class="tlogo"><i></i>Vanguard Electrical</span>
+    <span class="tlogo"><i></i>Stonefield Bricklaying</span>
+    <span class="tlogo"><i></i>Apex Carpentry Group</span>
+    <span class="tlogo"><i></i>Bayside Plumbing Co.</span>
+    <span class="tlogo"><i></i>IronLeaf Landscapes</span>
+    <span class="tlogo"><i></i>NorthPoint Render</span>
+    <span class="tlogo"><i></i>Meridian Tiling Co.</span>
+    <span class="tlogo"><i></i>Vanguard Electrical</span>
+    <span class="tlogo"><i></i>Stonefield Bricklaying</span>
+    <span class="tlogo"><i></i>Apex Carpentry Group</span>
+    <span class="tlogo"><i></i>Bayside Plumbing Co.</span>
+    <span class="tlogo"><i></i>IronLeaf Landscapes</span>
+    <span class="tlogo"><i></i>NorthPoint Render</span>
+  </div>
+</section>
+
+<!-- STATS -->
+<section class="stats">
+  <div class="wrap">
+    <div class="rv">
+      <h2>The collapse wave is real. Being blindsided is optional.</h2>
+      <p class="sub" style="margin-top:1rem">Construction is Australia's insolvency capital. The warning signs are sitting in public records — most people just never see them in time.</p>
+    </div>
+    <div class="statgrid">
+      <div class="stat rv d1"><b data-count="2970">0</b><span>building companies entered insolvency last financial year</span></div>
+      <div class="stat rv d2"><b><em data-count="27">0</em>%</b><span>of all Australian company failures come from construction alone</span></div>
+      <div class="stat rv d3"><b>$<em data-count="42">0</em>k</b><span>average unpaid exposure reported by subbies caught in a collapse</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- BENTO FEATURES -->
+<section class="bento-sec" id="product">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">The product</span>
+      <h2>One dashboard between you and a bad surprise</h2>
+      <p class="sub">Everything is built around a single question: <b style="color:var(--ink)">will I get paid?</b></p>
+    </div>
+    <div class="bento">
+
+      <div class="cell c-watch rv">
+        <div>
+          <span class="ic" style="background:var(--orange-soft);color:var(--orange)">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>
+          </span>
+          <h3>Watchlist monitoring</h3>
+          <p>Add every builder you work under. We re-test them against ASIC notices, court lists and licence registers continuously — and tell you the moment anything changes.</p>
+        </div>
+        <div class="mini-dash">
+          <div class="row"><span class="avatar" style="background:#E5484D">HC</span><span class="nm">Harbourline Constructions</span><span class="pill risk">ALERT</span></div>
+          <div class="row"><span class="avatar" style="background:#E9950C">BB</span><span class="nm">Bassline Building Group</span><span class="pill watch">WATCH</span></div>
+          <div class="row"><span class="avatar" style="background:#149E5F">RH</span><span class="nm">Redgum Homes (Aus)</span><span class="pill ok">CLEAR</span></div>
+          <div class="row"><span class="avatar" style="background:#149E5F">SP</span><span class="nm">Southpoint Projects</span><span class="pill ok">CLEAR</span></div>
+        </div>
+      </div>
+
+      <div class="cell c-check rv d1">
+        <span class="ic" style="background:var(--clear-soft);color:var(--clear)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        </span>
+        <h3>Free builder check</h3>
+        <p>Search any builder by name or ABN. Company status, licence standing, adverse records — in ten seconds, free forever.</p>
+        <div class="mini-search">app.buildsafe.au → <span id="typer"></span><span class="caret"></span></div>
+        <div class="mini-result">
+          <div class="mr-band">CLEAR · ALL REGISTERS</div>
+          <div class="mr-body"><b>Redgum Homes (Aus) Pty Ltd</b><span>ABN 38 559 201 664 · VBA DB-U 60218 · tested 30 Jun</span></div>
+        </div>
+      </div>
+
+      <div class="cell c-expo rv d2">
+        <span class="ic" style="background:#EEF2FF;color:#4F46E5">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 3v18h18"/><path d="M7 15v3M12 10v8M17 6v12"/></svg>
+        </span>
+        <h3>Exposure tracker</h3>
+        <p>Log what each builder owes you. Your total dollars-at-risk, live, in one number.</p>
+        <div class="expo-bars"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="expo-cap"><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span><span>JUL</span></div>
+      </div>
+
+      <div class="cell c-alert rv d2">
+        <span class="ic" style="background:var(--risk-soft);color:var(--risk)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>
+        </span>
+        <h3>Instant SMS alerts</h3>
+        <p>Signals land on your phone with the source attached — not buried in an inbox.</p>
+        <div class="msg"><b>ALERT:</b> Court filing located for a builder on your watchlist. $42,300 exposed.<small>SMS · BuildSafe · source linked</small></div>
+      </div>
+
+      <div class="cell c-jobs rv d3">
+        <span class="ic" style="background:var(--watch-soft);color:var(--watch)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </span>
+        <h3>Job board with a pay-check built in</h3>
+        <p>Builders post day work and subcontracts. You see their BuildSafe status before you accept — the only board that answers "will I get paid?" upfront. Zero lead fees, ever.</p>
+        <div class="jobtag"><div><b>Wall &amp; floor tiler — bathroom reno ×3</b><span>CRANBOURNE VIC · STARTS MON · <b style="display:inline;color:var(--clear)">BUILDER: CLEAR</b> <svg style="display:inline;vertical-align:-1px" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#149E5F" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg></span></div><span class="rate">$620/day</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SPLIT: HOW ALERTS WORK -->
+<section class="split" id="how">
+  <div class="wrap">
+    <div class="rv">
+      <span class="eyebrow">How it works</span>
+      <h2 style="margin-top:1rem">From public record to your pocket in minutes</h2>
+      <p class="sub">The warning signs of a collapse are public — court filings, administrator appointments, licence changes. They're just scattered across a dozen registers nobody has time to watch. We watch them all, fuse them per-ABN, and translate them into plain English.</p>
+      <ul class="checks">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> Every alert links to the source document — verify it yourself in one tap</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> Facts and opinion clearly separated — never rumours, never verdicts</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg> Builders can dispute any record — corrections within 48 hours</li>
+      </ul>
+    </div>
+    <div class="rv d1">
+      <div class="timeline-card">
+        <h4>Signal timeline — Harbourline Constructions <span>LIVE FEED</span></h4>
+        <div class="tl">
+          <div class="tl-item ok"><small>02 MAR 2026</small><b>All registers clear</b><p>Routine re-test. No adverse records located.</p></div>
+          <div class="tl-item watch"><small>19 MAY 2026</small><b>Two director resignations in 60 days</b><p>ASIC register change. Status moved to WATCH.</p></div>
+          <div class="tl-item watch"><small>04 JUN 2026</small><b>Verified payment-delay reports</b><p>3 subbies report 60+ day terms. Aggregated &amp; anonymised.</p></div>
+          <div class="tl-item risk"><small>14 JUN 2026</small><b>Creditor's claim — Supreme Court VIC</b><p>Court filing located. Status moved to ALERT. Subscribers notified in 4 minutes.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECURITY / TRUST -->
+<section class="secure" id="security">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow">Fair by design</span>
+      <h2>Trust is the product — so we hold ourselves to it</h2>
+    </div>
+    <div class="secure-grid">
+      <div class="cell rv">
+        <span class="ic" style="background:var(--navy);color:#fff">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>
+        </span>
+        <h3>Bank-grade security</h3>
+        <p>Your exposure data is encrypted in transit and at rest, hosted onshore in Australia, and never sold. Your numbers are nobody's business but yours.</p>
+      </div>
+      <div class="cell rv d1">
+        <span class="ic" style="background:var(--navy);color:#fff">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <h3>Public records, cited</h3>
+        <p>Signals come from ASIC, the courts and state licence registers — with the source linked on every single alert. If we can't cite it, we don't publish it.</p>
+      </div>
+      <div class="cell rv d2">
+        <span class="ic" style="background:var(--navy);color:#fff">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/><circle cx="10" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/></svg>
+        </span>
+        <h3>Humans, not just algorithms</h3>
+        <p>Alert-level signals are reviewed before they fire, disputes are handled by a person within 48 hours, and support answers the phone. Radical, we know.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIAL -->
+<section class="quote-sec">
+  <div class="wrap">
+    <figure class="quote rv">
+      <blockquote>"I've watched mates lose <em>$80 grand</em> when a builder went under with no warning. The warning existed — it was sitting in a court list for six weeks. <em>Nobody was looking.</em> That's the whole point of this."</blockquote>
+      <figcaption><i>PC</i> Founding story — why BuildSafe exists</figcaption>
+    </figure>
+  </div>
+</section>
+
+<!-- PRICING TEASER -->
+<section class="cta" id="pricing">
+  <div class="wrap">
+    <div class="cta-card rv">
+      <span class="eyebrow" style="background:rgba(255,90,31,.15)">Launching first in Victoria · Founding pricing locked for life</span>
+      <h2 style="margin-top:1.4rem">Protection costs less than a carton a month</h2>
+      <p class="sub">Free checks forever. Monitoring from <b style="color:#fff">$29/month</b>. Builder plans from <b style="color:#fff">$99/month</b>. No lock-ins, no lead fees, no expiring credits — cancel in two taps.</p>
+      <form class="search" data-waitlist style="max-width:520px">
+        <input type="email" required placeholder="you@yourtrade.com.au" aria-label="Email address">
+        <button class="btn btn-primary btn-lg" type="submit">Get first access</button>
+      </form>
+      <p id="cta-flash" style="margin-top:1rem;font-size:.88rem;color:#7CE3AE;display:none">✓ You're on the list — first month free at launch.</p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <a class="logo" href="#"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>BuildSafe</a>
+        <p style="color:var(--slate);font-size:.88rem;margin-top:1rem;max-width:30ch">The financial safety layer for Australian construction. Built in Melbourne.</p>
+      </div>
+      <div><h5>Product</h5><ul><li><a href="#check">Builder check</a></li><li><a href="#product">Watchlist</a></li><li><a href="#product">Job board</a></li><li><a href="#pricing">Pricing</a></li></ul></div>
+      <div><h5>Trust</h5><ul><li><a href="#security">Security</a></li><li><a href="#security">Data sources</a></li><li><a href="#security">Corrections &amp; disputes</a></li></ul></div>
+      <div><h5>Legal</h5><ul><li><a href="#">Terms</a></li><li><a href="#">Privacy</a></li><li><a href="#">Disclaimer</a></li></ul></div>
+    </div>
+    <div class="f-legal">
+      <p>© 2026 BuildSafe. BuildSafe provides information drawn from public records for general business purposes. It is not legal, financial or credit advice, and is not a consumer credit report. Signals are facts from published sources; status ratings are our opinion based on those disclosed records. Builders may request corrections at any time. Dashboard content shown is illustrative sample data.</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* reveal on scroll */
+const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}}),{threshold:.14});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+/* animated counters */
+const cio=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;const el=e.target,end=+el.dataset.count,dur=1400,t0=performance.now();
+  const step=t=>{const p=Math.min((t-t0)/dur,1),v=Math.round(end*(1-Math.pow(1-p,3)));
+    el.textContent=v.toLocaleString('en-AU');if(p<1)requestAnimationFrame(step)};
+  requestAnimationFrame(step);cio.unobserve(el)}),{threshold:.5});
+document.querySelectorAll('[data-count]').forEach(el=>cio.observe(el));
+
+/* typewriter in bento check cell */
+const phrases=['redgum homes','ABN 38 559 201 664','harbourline constructions'];
+const typer=document.getElementById('typer');let pi=0,ci=0,del=false;
+function type(){
+  if(!typer)return;const p=phrases[pi];
+  typer.textContent=p.slice(0,ci);
+  if(!del){ci++;if(ci>p.length){del=true;setTimeout(type,1600);return}}
+  else{ci--;if(ci===0){del=false;pi=(pi+1)%phrases.length}}
+  setTimeout(type,del?38:74)
+}
+if(!matchMedia('(prefers-reduced-motion: reduce)').matches)type();else if(typer)typer.textContent=phrases[0];
+
+/* hero search → scroll to CTA (demo) */
+const hs=document.getElementById('hero-search');
+if(hs)hs.addEventListener('submit',e=>{e.preventDefault();
+  document.getElementById('pricing').scrollIntoView({behavior:'smooth'});
+});
+
+/* waitlist demo */
+document.querySelectorAll('[data-waitlist]').forEach(f=>f.addEventListener('submit',e=>{
+  e.preventDefault();const fl=document.getElementById('cta-flash');
+  if(fl)fl.style.display='block';f.reset();
+}));
+</script>
+</body>
+</html>

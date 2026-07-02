@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en-AU"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tradie app — BuildSafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head><body>
+
+<div class="appbar"><button id="appburger" class="burger" style="display:flex" aria-label="Menu"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></button><b style="font-family:var(--fd)">BuildSafe · Tradie</b><a href="index.html" class="mono" style="font-size:.62rem;color:#9DB0CC">EXIT</a></div>
+
+<div class="app">
+  <aside class="side">
+    <a class="logo" href="index.html"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>BuildSafe</a>
+    <span class="role">TRADIE APP</span>
+    <button class="sbtn on" data-tab="t-dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Dashboard</button>
+    <button class="sbtn" data-tab="t-jobs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>Job board</button>
+    <button class="sbtn" data-tab="t-alerts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Alerts</button>
+    <button class="sbtn" data-tab="t-prof"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0114 0v1"/></svg>My profile</button>
+    <div class="me"><span class="avatar" style="background:var(--orange)" id="me-av">PC</span><div><b id="me-nm">Parth C.</b><span id="me-tr">Wall &amp; Floor Tiling</span></div></div>
+  </aside>
+
+  <main class="main">
+    <!-- DASHBOARD -->
+    <div class="panel on" id="t-dash">
+      <div class="topbar"><h2>G'day Parth 👋</h2>
+        <button class="tog" id="avail" aria-pressed="false"><span>Available for day work</span><span class="knob"></span></button>
+      </div>
+      <div class="kpis">
+        <div class="kpi"><small>Builders watched</small><b id="k-watch">3</b></div>
+        <div class="kpi"><small>Total exposure</small><b class="or" id="k-exp">$96,000</b></div>
+        <div class="kpi"><small>Open alerts</small><b class="risk">1</b></div>
+        <div class="kpi"><small>Profile rating</small><b class="ok">4.9 ★</b></div>
+      </div>
+      <div class="topbar" style="margin-top:.4rem"><h3>Your watchlist</h3>
+        <form id="add-watch" style="display:flex;gap:.5rem"><input type="text" id="watch-q" placeholder="Add builder by name/ABN…" style="max-width:230px"><button class="btn btn-d btn-s" type="submit">＋ Watch</button></form>
+      </div>
+      <div class="list" id="watchlist"></div>
+    </div>
+
+    <!-- JOB BOARD -->
+    <div class="panel" id="t-jobs">
+      <div class="topbar"><h2>Job board</h2><span class="pill ok">ZERO LEAD FEES</span></div>
+      <div class="filters">
+        <button class="chip on" data-f="all">All</button><button class="chip" data-f="day">Day hire</button><button class="chip" data-f="sub">Subcontract</button>
+        <span style="margin-left:auto" class="hint">Builder pay-status shown on every job — apply free.</span>
+      </div>
+      <div class="grid2" id="jobfeed"></div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="panel" id="t-alerts">
+      <div class="topbar"><h2>Alerts</h2><span class="hint">Every alert cites a public source</span></div>
+      <div class="list" id="alertfeed"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="panel" id="t-prof">
+      <div class="topbar"><h2>My profile</h2><span class="hint">This is what builders see when you apply</span></div>
+      <div class="phead">
+        <span class="avatar av-lg" style="background:var(--orange)" id="pf-av">PC</span>
+        <div class="grow">
+          <h3 id="pf-nm" style="font-size:1.3rem">Parth C.</h3>
+          <div class="mono" style="font-size:.66rem;color:var(--slate2)" id="pf-line">WALL &amp; FLOOR TILING · CLYDE NORTH VIC · ABN 84 220 913 557</div>
+          <div class="pstats">
+            <div><b>4.9 ★</b><span>rating</span></div><div><b>37</b><span>jobs via BuildSafe</span></div>
+            <div><b>100%</b><span>show-up rate</span></div><div><b id="pf-ins">✓</b><span>insurance current</span></div>
+          </div>
+        </div>
+        <span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>ID Verified</span>
+      </div>
+
+      <h3 style="margin:1.6rem 0 .8rem">Edit details</h3>
+      <form class="form card" id="pf-form" style="padding:1.5rem">
+        <div class="f2">
+          <label>Display name<input type="text" id="e-nm" value="Parth C."></label>
+          <label>Primary trade<input type="text" id="e-tr" value="Wall & Floor Tiling"></label>
+        </div>
+        <div class="f2">
+          <label>Suburb<input type="text" id="e-sb" value="Clyde North VIC"></label>
+          <label>Insurance (insurer · amount · expiry)<input type="text" id="e-ins" value="CoverTrade · $10M · 03/2027"></label>
+        </div>
+        <button class="btn btn-p" style="justify-self:start">Save profile</button>
+      </form>
+
+      <h3 style="margin:1.8rem 0 .8rem">Portfolio</h3>
+      <div class="portfolio" id="pf-port"></div>
+      <button class="btn btn-g btn-s" style="margin-top:.8rem" id="add-photo">＋ Add work photo</button>
+
+      <h3 style="margin:1.8rem 0 .8rem">Reviews from builders &amp; clients</h3>
+      <div class="list" id="pf-reviews"></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/data.js"></script><script src="js/app.js"></script>
+<script>
+/* watchlist */
+function renderWatch(){
+  $("#watchlist").innerHTML=BS.watch.map(w=>{const b=B(w.b);const s=ST[b.st];
+    return `<div class="item alertcard ${s[1]==="risk"?"":s[1]==="watch"?"w":"c"}">
+      <span class="avatar" style="background:${b.col}">${initials(b.nm)}</span>
+      <div class="grow"><b>${esc(b.nm)}</b><span class="sub2">ABN ${b.abn} · ${esc(b.lic)}</span>
+        <div class="srcline">Latest: ${esc(b.signals[0].t)} — <a href="#" onclick="event.preventDefault();toast('Opens the ${esc(b.signals[0].src)} document')">${esc(b.signals[0].src)}</a></div></div>
+      <div style="text-align:right"><span class="pill ${s[1]}">${s[0]}</span><div class="mono" style="font-size:.66rem;color:var(--slate2);margin-top:.35rem">${w.exp?money(w.exp)+" exposed":"no $ logged"}</div></div>
+      <button class="btn btn-g btn-s" onclick="location.href='profile.html?b=${b.id}'">Profile</button>
+    </div>`}).join("");
+  $("#k-watch").textContent=BS.watch.length;
+  $("#k-exp").textContent=money(BS.watch.reduce((a,w)=>a+w.exp,0));
+}
+$("#add-watch").addEventListener("submit",e=>{e.preventDefault();
+  const q=$("#watch-q").value.trim().toLowerCase();
+  const b=BS.builders.find(x=>x.nm.toLowerCase().includes(q)||x.abn.replace(/\s/g,"").includes(q.replace(/\s/g,"")));
+  if(!b){toast("Demo: try Harbourline, Bassline, Redgum or Southpoint");return}
+  if(BS.watch.find(w=>w.b===b.id)){toast("Already watching "+b.nm);return}
+  BS.watch.push({b:b.id,exp:0});$("#watch-q").value="";renderWatch();toast(b.nm+" added — monitoring is on");
+});
+
+/* jobs */
+window.renderJobsTradie=function(){$("#jobfeed").innerHTML=BS.jobs.map(j=>jobCard(j,"tradie")).join("");initReveal()}
+$$("#t-jobs .chip").forEach(c=>c.addEventListener("click",()=>{$$("#t-jobs .chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");toast("Filter: "+c.textContent+" (demo)")}));
+
+/* alerts */
+$("#alertfeed").innerHTML=BS.alerts.map(a=>`<div class="item alertcard ${a.lv==="risk"?"":a.lv==="watch"?"w":"c"}">
+  <div class="grow"><b>${esc(a.t)}</b><p style="font-size:.86rem;color:var(--slate);margin-top:.2rem">${esc(a.d)}</p>
+  <div class="srcline">Source: <a href="#" onclick="event.preventDefault();toast('Opens the cited public document')">${esc(a.src)}</a></div></div>
+  <span class="mono" style="font-size:.62rem;color:var(--slate2)">${a.when}</span></div>`).join("");
+
+/* available toggle */
+$("#avail").addEventListener("click",function(){const on=this.getAttribute("aria-pressed")==="true";this.setAttribute("aria-pressed",!on);
+  this.querySelector("span").textContent=!on?"Available now — visible to builders":"Available for day work";
+  toast(!on?"You're live — nearby builders can book your day":"Availability off")});
+
+/* profile */
+function renderPort(){ $("#pf-port").innerHTML=[["tile","Ensuite · Clyde Nth"],["house","Alfresco · Officer"],["tile","Laundry · Cranbourne"],["frame","Splashback · Berwick"]].map(a=>art(a[0],a[1])).join("") }
+$("#add-photo").addEventListener("click",()=>{$("#pf-port").insertAdjacentHTML("beforeend",art("tile","New upload"));toast("Photo added to portfolio")});
+$("#pf-reviews").innerHTML=[
+  {n:"Redgum Homes",role:"Builder",r:5,tx:"Turned up every day, immaculate wet areas, zero call-backs. Booked him for the next stage."},
+  {n:"Southpoint Projects",role:"Builder",r:5,tx:"Fast, tidy, great with variations. Reliability score speaks for itself."},
+  {n:"Sarah D.",role:"Homeowner",r:4,tx:"Beautiful tiling in both bathrooms. Slight delay on grout colour but sorted quickly."}
+].map(reviewHTML).join("");
+$("#pf-form").addEventListener("submit",e=>{e.preventDefault();
+  const nm=$("#e-nm").value,tr=$("#e-tr").value,sb=$("#e-sb").value;
+  $("#pf-nm").textContent=nm;$("#me-nm").textContent=nm;$("#me-tr").textContent=tr;
+  $("#pf-av").textContent=initials(nm);$("#me-av").textContent=initials(nm);
+  $("#pf-line").textContent=(tr+" · "+sb+" · ABN 84 220 913 557").toUpperCase();
+  toast("Profile saved — builders now see the update")});
+
+renderWatch();renderJobsTradie();renderPort();
+</script>
+</body></html>

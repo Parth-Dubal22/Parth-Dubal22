@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en-AU"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customer app — BuildSafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head><body>
+
+<div class="appbar"><button id="appburger" class="burger" style="display:flex" aria-label="Menu"><span style="background:#fff"></span><span style="background:#fff"></span><span style="background:#fff"></span></button><b style="font-family:var(--fd)">BuildSafe · Customer</b><a href="index.html" class="mono" style="font-size:.62rem;color:#9DB0CC">EXIT</a></div>
+
+<div class="app">
+  <aside class="side">
+    <a class="logo" href="index.html"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>BuildSafe</a>
+    <span class="role">CUSTOMER APP</span>
+    <button class="sbtn on" data-tab="c-find"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Find a builder</button>
+    <button class="sbtn" data-tab="c-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg>Deposit-safety check</button>
+    <button class="sbtn" data-tab="c-req"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.5 8.5 0 01-8.5 8.5 8.4 8.4 0 01-4-.98L3 20l1-5.5a8.5 8.5 0 1117-3z"/></svg>My requests</button>
+    <div class="me"><span class="avatar" style="background:#2E5E8F">SD</span><div><b>Sarah D.</b><span>Officer VIC · Reno</span></div></div>
+  </aside>
+
+  <main class="main">
+    <!-- FIND -->
+    <div class="panel on" id="c-find">
+      <div class="topbar"><h2>Find a builder you can trust with a deposit</h2></div>
+      <div class="filters">
+        <input type="text" id="dir-q" placeholder="Search builders…" style="max-width:260px">
+        <button class="chip on" data-df="all">All</button>
+        <button class="chip" data-df="verified">Verified only</button>
+        <button class="chip" data-df="townhouses">Townhouses</button>
+        <button class="chip" data-df="renovations">Renovations</button>
+      </div>
+      <div class="grid3" id="dir"></div>
+      <p class="hint" style="margin-top:1rem">Ratings include reviews from the subbies each builder pays — a trust signal no other directory has.</p>
+    </div>
+
+    <!-- CHECK -->
+    <div class="panel" id="c-check">
+      <div class="topbar"><h2>Deposit-safety check</h2><span class="pill ok">FREE FOREVER</span></div>
+      <div class="grid2">
+        <form class="card form" style="padding:1.6rem" id="chk-form">
+          <label>Builder name or ABN<input type="text" id="chk-q" placeholder="Try: Harbourline / Redgum / Bassline / Southpoint"></label>
+          <label>Deposit you're about to pay (optional)<input type="number" id="chk-amt" placeholder="e.g. 35000"></label>
+          <button class="btn btn-p btn-lg" style="justify-self:start">Run check →</button>
+          <p class="hint">Pulls company status, licence standing and adverse public records into one plain-English answer — with sources.</p>
+        </form>
+        <div id="chk-out"><div class="card"><h3>What you'll see</h3><p>A colour-coded result with every signal cited to its public document, plus deposit guidance for Victoria (e.g. statutory deposit limits) before you hand money over.</p></div></div>
+      </div>
+    </div>
+
+    <!-- REQUESTS -->
+    <div class="panel" id="c-req">
+      <div class="topbar"><h2>My quote requests</h2></div>
+      <div class="list" id="reqs"><div class="card"><p>No requests yet — find a builder and tap <b>Request quote</b>. They reply here with their Verified status attached.</p></div></div>
+    </div>
+  </main>
+</div>
+
+<script src="js/data.js"></script><script src="js/app.js"></script>
+<script>
+/* directory */
+function renderDir(f,q){
+  q=(q||"").toLowerCase();
+  let list=BS.builders.filter(b=>b.nm.toLowerCase().includes(q));
+  if(f==="verified")list=list.filter(b=>b.verified);
+  if(f==="townhouses")list=list.filter(b=>b.tags.join(" ").toLowerCase().includes("town")||b.tags.join(" ").toLowerCase().includes("multi"));
+  if(f==="renovations")list=list.filter(b=>b.tags.join(" ").toLowerCase().includes("renov"));
+  $("#dir").innerHTML=list.map(b=>builderCard(b,true)).join("")||`<div class="card"><h3>No matches</h3><p>Try clearing filters — or check any builder by ABN in the Deposit-safety tab; they don't need a profile for you to check them.</p></div>`;
+  initReveal();
+}
+let curF="all";
+$$("#c-find .chip").forEach(c=>c.addEventListener("click",()=>{$$("#c-find .chip").forEach(x=>x.classList.remove("on"));c.classList.add("on");curF=c.dataset.df;renderDir(curF,$("#dir-q").value)}));
+$("#dir-q").addEventListener("input",e=>renderDir(curF,e.target.value));
+
+/* quote request → my requests */
+document.addEventListener("click",e=>{
+  const q=e.target.closest("[data-quote]");if(!q)return;
+  const b=B(q.dataset.quote);
+  const el=document.createElement("div");el.className="item";
+  el.innerHTML=`<span class="avatar" style="background:${b.col}">${initials(b.nm)}</span>
+    <div class="grow"><b>Quote request — ${esc(b.nm)}</b><span class="sub2">Sent just now · ${b.verified?"VERIFIED BUILDER":"STATUS: "+ST[b.st][0]}</span></div>
+    <span class="pill navy">AWAITING REPLY</span>`;
+  const box=$("#reqs");if(box.querySelector(".card"))box.innerHTML="";box.prepend(el);
+},true);
+
+/* deposit check */
+$("#chk-form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const q=$("#chk-q").value.trim().toLowerCase();
+  const amt=+$("#chk-amt").value||0;
+  const b=BS.builders.find(x=>x.nm.toLowerCase().includes(q)||x.abn.replace(/\s/g,"").includes(q.replace(/\s/g,"")));
+  if(!b){$("#chk-out").innerHTML=`<div class="card"><h3>Demo dataset</h3><p>Try: Harbourline, Bassline, Redgum or Southpoint. At launch this searches every registered Australian builder.</p></div>`;return}
+  const s=ST[b.st];
+  const advice={risk:`Serious public records located. ${amt?`We'd hold off on paying ${money(amt)} until you've taken advice — `:""}read each source below and consider talking to a construction lawyer before signing or paying.`,
+    watch:`Early signals on record. ${amt?`Before paying ${money(amt)}, `:""}keep your deposit at the legal minimum, insist on staged payments, and re-check before each stage.`,
+    ok:`No adverse public records located. ${amt?`Paying ${money(amt)} as a deposit? `:""}Still keep deposits within Victoria's statutory limits and pay by stages — and we'll keep watching for free.`};
+  $("#chk-out").innerHTML=`<div class="card" style="border-top:5px solid var(--${s[1]==="ok"?"clear":s[1]})">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:.8rem"><div><h3>${esc(b.nm)}</h3>
+    <div class="mono" style="font-size:.64rem;color:var(--slate2)">ABN ${b.abn} · ${esc(b.lic)}</div></div><span class="pill ${s[1]}">${s[0]}</span></div>
+    <p style="margin-top:.8rem">${advice[b.st]}</p>
+    <div class="list" style="margin-top:1rem">${b.signals.map(sg=>`<div class="item" style="box-shadow:none"><div class="grow"><b style="font-size:.86rem">${esc(sg.t)}</b><div class="srcline">${sg.d} · Source: <a href="#" onclick="event.preventDefault();toast('Opens the cited public document')">${esc(sg.src)}</a></div></div><span class="pill ${sg.lv==="ok"?"ok":sg.lv}">${sg.lv.toUpperCase()==="OK"?"CLEAR":sg.lv.toUpperCase()}</span></div>`).join("")}</div>
+    <div style="display:flex;gap:.6rem;margin-top:1rem;flex-wrap:wrap"><a class="btn btn-d btn-s" href="profile.html?b=${b.id}">Full profile &amp; reviews</a><button class="btn btn-g btn-s" onclick="toast('Free monitoring on — we\\'ll email you if anything changes')">Watch for free</button></div>
+    <p class="hint" style="margin-top:.8rem">General information from public records — not legal or financial advice.</p></div>`;
+  toast("Check complete — "+s[0]);
+});
+
+renderDir("all","");
+</script>
+</body></html>

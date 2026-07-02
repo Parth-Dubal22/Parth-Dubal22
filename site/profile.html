@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en-AU"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Builder profile — BuildSafe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<style>.cover{height:230px;border-radius:26px;overflow:hidden;position:relative;margin-bottom:-56px}.cover .art{height:100%;border-radius:26px}.pwrap{width:min(980px,92%);margin-inline:auto;padding:2rem 0 4rem}</style>
+</head><body>
+
+<header class="nav"><div class="wrap">
+  <a class="logo" href="index.html"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>BuildSafe</a>
+  <nav class="nav-links"><a href="app-customer.html">Directory</a><a href="app-tradie.html">Tradie app</a><a href="app-builder.html">Builder app</a><a class="btn btn-p" href="onboarding.html">Get started</a></nav>
+  <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+</div></header>
+
+<div class="pwrap">
+  <div class="cover" id="cover"></div>
+  <div class="phead" style="position:relative;z-index:2">
+    <span class="avatar av-xl" id="p-av" style="background:#149E5F">RH</span>
+    <div class="grow">
+      <div style="display:flex;align-items:center;gap:.7rem;flex-wrap:wrap"><h2 id="p-nm">Redgum Homes</h2><span id="p-badge"></span></div>
+      <div class="mono" style="font-size:.68rem;color:var(--slate2);margin-top:.3rem" id="p-line"></div>
+      <div class="pstats" id="p-stats"></div>
+    </div>
+    <div style="display:grid;gap:.5rem">
+      <button class="btn btn-p" id="p-quote">Request a quote</button>
+      <button class="btn btn-g btn-s" id="p-watch">＋ Add to watchlist</button>
+    </div>
+  </div>
+
+  <div class="grid2" style="margin-top:1.4rem;align-items:start">
+    <div>
+      <h3 style="margin:.6rem 0 .8rem">Public record — with sources</h3>
+      <div class="list" id="p-signals"></div>
+      <h3 style="margin:1.8rem 0 .8rem">Recent work</h3>
+      <div class="portfolio" style="grid-template-columns:1fr 1fr" id="p-port"></div>
+    </div>
+    <div>
+      <h3 style="margin:.6rem 0 .8rem">Reviews <span class="hint" id="p-rc"></span></h3>
+      <div class="list" id="p-reviews"></div>
+      <form class="card form" style="padding:1.3rem;margin-top:1rem" id="rev-form">
+        <b style="font-family:var(--fd)">Write a review</b>
+        <div class="f2">
+          <label>Your name<input type="text" id="r-n" placeholder="Name or business" required></label>
+          <label>You are a…<select id="r-role"><option>Homeowner</option><option>Subcontractor</option></select></label>
+        </div>
+        <label>Rating<select id="r-r"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></label>
+        <label>Your experience <span class="hint">— verified against a real job before publishing</span><textarea id="r-t" placeholder="How was the build? Did payments run on time?" required></textarea></label>
+        <button class="btn btn-d" style="justify-self:start">Submit review</button>
+      </form>
+    </div>
+  </div>
+  <p class="f-legal" style="margin-top:2.5rem">Public-record signals are facts from published sources (linked). Status ratings are BuildSafe's opinion based on those disclosed records. Reviews are verified against real transactions; builders may respond publicly and may request corrections at any time. Demo page with sample data.</p>
+</div>
+
+<script src="js/data.js"></script><script src="js/app.js"></script>
+<script>
+const id=new URLSearchParams(location.search).get("b")||"rh";
+const b=B(id)||B("rh");
+const s=ST[b.st];
+document.title=b.nm+" — BuildSafe profile";
+$("#cover").innerHTML=art(b.art,b.loc+" · portfolio");
+$("#p-av").textContent=initials(b.nm);$("#p-av").style.background=b.col;
+$("#p-nm").textContent=b.nm;
+$("#p-badge").outerHTML=b.verified
+  ?`<span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>BuildSafe Verified</span>`
+  :`<span class="pill ${s[1]}">${s[0]}</span>`;
+$("#p-line").textContent=("ABN "+b.abn+" · "+b.lic+" · "+b.tags.join(" · ")).toUpperCase();
+$("#p-stats").innerHTML=`<div><b>${b.rating} ★</b><span>${b.reviews} verified reviews</span></div><div><b>${b.verified?"Monthly":"On demand"}</b><span>re-verification</span></div><div><b>${(BS.reviews[b.id]||[]).filter(r=>r.role==="Subcontractor").length}</b><span>subbie reviews</span></div>`;
+$("#p-signals").innerHTML=b.signals.map(sg=>`<div class="item alertcard ${sg.lv==="risk"?"":sg.lv==="watch"?"w":"c"}" style="box-shadow:var(--sh1)">
+  <div class="grow"><b style="font-size:.9rem">${esc(sg.t)}</b>
+  <div class="srcline">${sg.d} · Source: <a href="#" onclick="event.preventDefault();toast('Opens the cited public document')">${esc(sg.src)}</a></div></div>
+  <span class="pill ${sg.lv==="ok"?"ok":sg.lv}">${sg.lv==="ok"?"CLEAR":sg.lv.toUpperCase()}</span></div>`).join("");
+$("#p-port").innerHTML=[[b.art,"Completed · "+b.loc],["tile","Wet areas"],["frame","In progress"],["house","Handover"]].map(a=>art(a[0],a[1])).join("");
+const rs=BS.reviews[b.id]||[];
+$("#p-rc").textContent="("+rs.length+" shown · verified)";
+$("#p-reviews").innerHTML=rs.map(reviewHTML).join("")||`<div class="card"><p>No reviews yet — be the first (reviews are verified against real jobs).</p></div>`;
+$("#rev-form").addEventListener("submit",e=>{
+  e.preventDefault();
+  const r={n:$("#r-n").value,role:$("#r-role").value,r:+$("#r-r").value,tx:$("#r-t").value};
+  (BS.reviews[b.id]=BS.reviews[b.id]||[]).unshift(r);
+  $("#p-reviews").insertAdjacentHTML("afterbegin",reviewHTML(r));
+  $("#p-rc").textContent="("+BS.reviews[b.id].length+" shown · verified)";
+  e.target.reset();toast("Review submitted — published after verification");
+});
+$("#p-quote").addEventListener("click",()=>toast("Quote request sent to "+b.nm+" — replies land in your Customer app"));
+$("#p-watch").addEventListener("click",()=>{if(!BS.watch.find(w=>w.b===b.id))BS.watch.push({b:b.id,exp:0});toast(b.nm+" added to your watchlist")});
+</script>
+</body></html>

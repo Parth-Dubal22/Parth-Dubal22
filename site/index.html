@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en-AU"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BuildSafe — Two apps. One promise: everyone gets paid.</title>
+<meta name="description" content="BuildSafe is the two-sided platform for Australian construction: customers hire financially-verified builders; tradies and builders get monitored, get work, and get paid.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+</head><body>
+
+<header class="nav"><div class="wrap">
+  <a class="logo" href="index.html"><span class="logo-mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></span>BuildSafe</a>
+  <nav class="nav-links">
+    <a href="app-customer.html">For customers</a>
+    <a href="app-tradie.html">For tradies</a>
+    <a href="app-builder.html">For builders</a>
+    <a href="onboarding.html">Create profile</a>
+    <a class="btn btn-p" href="onboarding.html">Get started</a>
+  </nav>
+  <button class="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+</div></header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div>
+      <span class="eyebrow" style="background:rgba(255,90,31,.15)">One platform · Two apps · Every side protected</span>
+      <h1 style="margin-top:1.3rem">The build platform where <em>everyone gets paid.</em></h1>
+      <p class="sub">Like Uber has a rider app and a driver app — BuildSafe has one side for customers hiring with confidence, and one side for tradies &amp; builders who get monitored, get work, and get paid. All powered by the same financial risk engine.</p>
+      <form class="search" onsubmit="event.preventDefault();location.href='app-customer.html'">
+        <input type="text" placeholder="Check a builder — name or ABN…" aria-label="Builder name or ABN">
+        <button class="btn btn-p btn-lg" type="submit">Check free</button>
+      </form>
+      <div class="hero-apps">
+        <a class="btn btn-g" href="app-customer.html" style="background:rgba(255,255,255,.95)">Open Customer app →</a>
+        <a class="btn btn-g" href="app-tradie.html" style="background:rgba(255,255,255,.95)">Open Tradie app →</a>
+        <a class="btn btn-g" href="app-builder.html" style="background:rgba(255,255,255,.95)">Open Builder app →</a>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><b>2,970</b><span>builder insolvencies last FY</span></div>
+        <div class="hstat"><b>$42k</b><span>avg. subbie loss per collapse</span></div>
+        <div class="hstat"><b>10 sec</b><span>to check any builder, free</span></div>
+      </div>
+    </div>
+
+    <!-- two phones: customer + pro -->
+    <div class="duo" aria-hidden="true">
+      <div class="phone"><div class="scr">
+        <div class="p-head"><div class="who"><span class="avatar" style="background:#2E5E8F">C</span><b>Customer</b></div><span class="p-tag">HIRE SAFE</span></div>
+        <div class="p-body">
+          <div class="mcard"><b>Find a verified builder</b><span>TOWNHOUSE · OFFICER VIC</span></div>
+          <div class="mcard"><div class="mrow"><div><b>Redgum Homes (Aus)</b><span>★ 4.8 · 63 reviews</span></div><span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Verified</span></div></div>
+          <div class="mcard"><div class="mrow"><div><b>Southpoint Projects</b><span>★ 4.7 · 41 reviews</span></div><span class="vbadge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Verified</span></div></div>
+          <div class="mcard" style="border-left:4px solid var(--clear)"><b>Deposit safety check ✓</b><span>SAFE TO PROCEED · SOURCES ATTACHED</span></div>
+        </div>
+      </div></div>
+      <div class="phone"><div class="scr">
+        <div class="p-head"><div class="who"><span class="avatar" style="background:var(--orange)">P</span><b>Tradie / Builder</b></div><span class="p-tag">GET PAID</span></div>
+        <div class="p-body">
+          <div class="mcard" style="border-left:4px solid var(--risk)"><b>⚠ Alert · Harbourline Constructions</b><span>COURT FILING · $42,300 EXPOSED · SOURCE →</span></div>
+          <div class="mcard"><div class="mrow"><div><b>Tiler — bathroom reno ×3</b><span>CRANBOURNE · STARTS MON · BUILDER: CLEAR</span></div><span class="rate" style="font-size:.8rem">$620/day</span></div></div>
+          <div class="mcard"><div class="mrow"><b>Available now</b><span class="pill ok">ON</span></div><span>BUILDERS NEARBY CAN BOOK YOUR DAY</span></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <!-- construction skyline scene -->
+  <div class="scene"><svg viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+    <rect width="1440" height="320" fill="transparent"/>
+    <g fill="#081524"><rect x="0" y="180" width="180" height="140"/><rect x="200" y="120" width="120" height="200"/><rect x="360" y="200" width="220" height="120"/><rect x="620" y="90" width="140" height="230"/><rect x="800" y="160" width="180" height="160"/><rect x="1020" y="110" width="120" height="210"/><rect x="1180" y="190" width="260" height="130"/></g>
+    <g stroke="#FF5A1F" stroke-width="6"><path d="M700 320V60h8v260M704 60l190-34M894 26v26M704 60l-90 18M820 42v20"/></g>
+    <g fill="#FFC773" opacity=".9"><rect x="230" y="150" width="14" height="10"/><rect x="260" y="150" width="14" height="10"/><rect x="230" y="180" width="14" height="10"/><rect x="650" y="120" width="14" height="10"/><rect x="680" y="120" width="14" height="10"/><rect x="650" y="150" width="14" height="10"/><rect x="1050" y="140" width="14" height="10"/><rect x="1080" y="170" width="14" height="10"/></g>
+  </svg></div>
+</section>
+
+<!-- UBER-STYLE TWO APPS -->
+<section class="twoapps">
+  <div class="wrap">
+    <div class="sec-head rv"><span class="eyebrow">How the platform works</span><h2>Two apps. One risk engine underneath.</h2>
+    <p class="sub">Every side of a build joins with their own profile — and the same engine protects them all.</p></div>
+    <div class="grid2">
+      <div class="appcard cust rv">
+        <span class="ic" style="background:var(--cloud);color:var(--navy)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5L12 4l9 6.5"/><path d="M5 10v10h14V10"/><rect x="10" y="14" width="4" height="6"/></svg></span>
+        <h3>Customer app — hire with proof</h3>
+        <ul>
+          <li>Search a directory where every builder's financial standing is checked, not guessed</li>
+          <li>Read verified reviews from homeowners <b>and</b> the subbies they pay</li>
+          <li>Run a free deposit-safety check before handing over five figures</li>
+          <li>Request quotes from Verified builders in two taps</li>
+        </ul>
+        <a class="btn btn-d" href="app-customer.html">Open the Customer app →</a>
+      </div>
+      <div class="appcard pro rv d1">
+        <span class="ic" style="background:var(--osoft);color:var(--orange)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4.5 4.5 0 00-6.4 6.4L3 18v3h3l5.3-5.3a4.5 4.5 0 006.4-6.4L14 13l-3-3z"/></svg></span>
+        <h3>Tradie &amp; Builder app — work, watch, get paid</h3>
+        <ul>
+          <li>Build a profile: trades, licence, insurance, portfolio, reviews</li>
+          <li>Watch the companies you're exposed to — alerts the moment records change</li>
+          <li>Job board: builders post day-hire &amp; subcontracts; tradies apply free</li>
+          <li>Flip “Available now” and pick up a paid day when a site rains off</li>
+        </ul>
+        <a class="btn btn-p" href="app-tradie.html">Open the Pro app →</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE FROM THE PLATFORM -->
+<section>
+  <div class="wrap">
+    <div class="sec-head rv"><span class="eyebrow">Live from the platform</span><h2>Real screens, working right now</h2><p class="sub">Everything below is clickable in the apps — profiles, reviews, job posting, alerts.</p></div>
+    <div class="grid3">
+      <div class="card rv"><span class="ic" style="background:var(--rsoft);color:var(--risk)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg></span>
+        <h3>Watchlists &amp; alerts</h3><p>Court filings, ASIC notices, licence changes — pushed to your phone with the source attached.</p><a class="btn btn-g btn-s" href="app-tradie.html" style="margin-top:1rem">See it in the Tradie app</a></div>
+      <div class="card rv d1"><span class="ic" style="background:var(--wsoft);color:var(--watch)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></span>
+        <h3>Job board (both directions)</h3><p>Builders post work and see applicants' verified credentials. Tradies see the builder's pay-status before applying.</p><a class="btn btn-g btn-s" href="app-builder.html" style="margin-top:1rem">Post a job as a builder</a></div>
+      <div class="card rv d2"><span class="ic" style="background:var(--csoft);color:var(--clear)"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/><path d="M9 12l2 2 4-4"/></svg></span>
+        <h3>Profiles, badges &amp; reviews</h3><p>Verified profiles with portfolios, two-way reviews (yes — tradies rate builders too), and badges that mean something.</p><a class="btn btn-g btn-s" href="profile.html?b=rh" style="margin-top:1rem">View a builder profile</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROOF -->
+<section style="background:var(--navy);color:#fff">
+  <div class="wrap split">
+    <div class="rv"><span class="eyebrow" style="background:rgba(255,90,31,.15)">Why now</span>
+      <h2 style="color:#fff;margin-top:1rem">Nearly 3,000 builders collapsed last year. The warnings were public.</h2>
+      <p class="sub" style="color:#9DB0CC;margin-top:1rem">Court lists, ASIC notices, licence registers — the signals sit in plain sight, scattered where nobody looks. We fuse them per-ABN and put them on your phone.</p>
+      <ul class="checks" style="color:#DDE7F3">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#33C088" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Every alert cites its public source — verify in one tap</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#33C088" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>Facts and opinion clearly separated; corrections within 48h</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="#33C088" stroke-width="2.4" stroke-linecap="round"><path d="M20 6L9 17l-5-5"/></svg>No lead fees, no lock-ins, no expiring credits — ever</li>
+      </ul>
+    </div>
+    <div class="rv d1">${""}
+      <div class="portfolio" style="grid-template-columns:1fr 1fr">
+        <div style="grid-column:span 2"><!-- big art --></div>
+      </div>
+      <div class="grid2" id="landing-art"></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="wrap">
+    <div class="appcard rv" style="text-align:center;padding:3.5rem 2rem;background:linear-gradient(160deg,#0F2440,#0A1B2E);color:#fff;border:none">
+      <h2 style="color:#fff">Pick your side. Same engine protects you.</h2>
+      <p class="sub" style="color:#9DB0CC;max-width:52ch;margin:1rem auto 1.8rem">Create a profile in under two minutes — customer, tradie, or builder. Founding members lock launch pricing for life.</p>
+      <div style="display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap">
+        <a class="btn btn-p btn-lg" href="onboarding.html">Create your profile →</a>
+        <a class="btn btn-g btn-lg" href="app-customer.html" style="background:#fff">Just check a builder</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer><div class="wrap"><p class="f-legal">© 2026 BuildSafe · Built in Melbourne. Demo preview with sample data. BuildSafe provides information drawn from public records for general business purposes — not legal, financial or credit advice, and not a consumer credit report. Signals are sourced facts; status ratings are our opinion based on those disclosed records. Builders may request corrections at any time.</p></div></footer>
+
+<script src="js/data.js"></script><script src="js/app.js"></script>
+<script>
+document.getElementById("landing-art").innerHTML =
+  art("crane","Melbourne SE · dusk pour") + art("frame","Timber frame · Werribee") + art("house","Handover day · Officer") + art("tile","Wet-area tiling · Clyde Nth");
+</script>
+</body></html>
