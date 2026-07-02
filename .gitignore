@@ -1,0 +1,9 @@
+
+# Ruflo / claude-flow runtime state (generated at runtime, not part of the install)
+.swarm/
+ruvector.db
+*.db-shm
+*.db-wal
+.claude-flow/data/
+.claude-flow/logs/
+.claude-flow/sessions/
