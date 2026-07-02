@@ -16,6 +16,7 @@ directly with drizzle; **mutations always go through these routes**.
 | `/api/check` | POST | public | `{query}` (name or ABN) → `{ok, slug}`; client navigates to `/check/[slug]` |
 | `/api/jobs` | POST | builder | `{title, type:'subcontract'\|'day_hire', rate, location, startText, duration, requirement?, trade?}` → `{ok, job}` |
 | `/api/jobs/[id]/apply` | POST | tradie | `{note?}` → `{ok}` (unique per tradie) |
+| `/api/applications/[id]` | POST | builder(job owner) | `{action:'accept'\|'decline'}` → `{ok}`; accept ⇒ status `contacted` + adds tradie to the builder's subbie panel |
 | `/api/jobs/[id]` | PATCH | builder(owner) | `{status:'open'\|'closed'}` → `{ok}` |
 | `/api/reviews` | POST | any | `{subjectCompanyId? \| subjectUserId?, rating:1..5, text, paidOnTime?, authorRole:'homeowner'\|'subcontractor'\|'builder'}` → `{ok, review}` |
 | `/api/reviews/[id]/reply` | POST | builder(subject company owner) | `{reply}` → `{ok}` (reply is public, review never deleted) |

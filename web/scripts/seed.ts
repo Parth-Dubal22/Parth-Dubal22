@@ -75,8 +75,8 @@ async function main() {
     ],
   });
   await db.insert(tables.tradieProfiles).values([
-    { userId: extra.nguyen, businessName: "M. Nguyen Rendering", trades: ["Rendering"], suburb: "Tarneit", state: "VIC", insuranceProvider: "TradeSure", insuranceExpiry: new Date("2027-01-15"), insuranceVerified: true, jobsCompleted: 24, reliabilityScore: 94 },
-    { userId: extra.procoat, businessName: "ProCoat Render Co", trades: ["Rendering"], suburb: "Werribee", state: "VIC", insuranceProvider: "BuildCover", insuranceExpiry: new Date("2026-11-30"), insuranceVerified: true, jobsCompleted: 18, reliabilityScore: 91 },
+    { userId: extra.nguyen, businessName: "M. Nguyen Rendering", trades: ["Rendering"], suburb: "Tarneit", state: "VIC", insuranceProvider: "TradeSure", insuranceExpiry: new Date("2027-01-15"), insuranceVerified: true, availableNow: true, jobsCompleted: 24, reliabilityScore: 94 },
+    { userId: extra.procoat, businessName: "ProCoat Render Co", trades: ["Rendering"], suburb: "Werribee", state: "VIC", insuranceProvider: "BuildCover", insuranceExpiry: new Date("2026-11-30"), insuranceVerified: true, availableNow: true, jobsCompleted: 18, reliabilityScore: 91 },
     { userId: extra.okafor, businessName: "J. Okafor Tiling", trades: ["Tiling"], suburb: "Cranbourne", state: "VIC", jobsCompleted: 41, reliabilityScore: 97 },
     { userId: extra.ferraro, businessName: "L. Ferraro Carpentry", trades: ["Carpentry"], suburb: "Clyde", state: "VIC", jobsCompleted: 33, reliabilityScore: 95 },
     { userId: extra.tomic, businessName: "A. Tomic Plumbing", trades: ["Plumbing"], suburb: "Berwick", state: "VIC", jobsCompleted: 27, reliabilityScore: 92 },

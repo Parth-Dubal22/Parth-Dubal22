@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/Toast";
 import Stars from "@/components/Stars";
+import { ALL_TRADES } from "@/lib/format";
 
 export type Pill = { label: string; cls: string };
 
@@ -50,9 +51,10 @@ export type BuilderVM = {
     dur: string;
     rate: string;
     status: string;
-    apps: { id: number; name: string; initials: string; sub2: string }[];
+    apps: { id: number; tradieUserId: number; status: string; name: string; initials: string; sub2: string }[];
   }[];
   reviews: { id: number; name: string; initials: string; roleLabel: string; rating: number; text: string; reply: string | null }[];
+  availableTradies: { name: string; initials: string; sub2: string }[];
   paySummary: { b: string; s: string };
   pendingTiers: string[];
 };
@@ -186,6 +188,7 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
       startText: String(fd.get("start") ?? "").trim(),
       duration: String(fd.get("duration") ?? "").trim() || "—",
       requirement: String(fd.get("requirement") ?? "").trim() || undefined,
+      trade: String(fd.get("trade") ?? "").trim() || undefined,
     });
     setBusy(false);
     if (d.ok) {
@@ -258,6 +261,40 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
       router.refresh();
     } else {
       toast(d.error || "Could not submit the application");
+    }
+  }
+
+  /* ---- accept an applicant → status 'contacted' + add to subbie panel ---- */
+  async function acceptApplicant(appId: number, name: string) {
+    setBusy(true);
+    const d = await api(`/api/applications/${appId}`, "POST", { action: "accept" });
+    setBusy(false);
+    if (d.ok) {
+      toast(`${name} accepted — contact details unlocked and added to your subbie panel`);
+      router.refresh();
+    } else {
+      toast(d.error || "Could not accept the applicant");
+    }
+  }
+
+  /* ---- builder → tradie review → POST /api/reviews (subjectUserId) ---- */
+  const [reviewFor, setReviewFor] = useState<number | null>(null);
+  async function submitTradieReview(e: React.FormEvent<HTMLFormElement>, tradieUserId: number, name: string) {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const fd = new FormData(form);
+    const rating = Number(fd.get("rating"));
+    const text = String(fd.get("text") ?? "").trim();
+    if (!text) return;
+    setBusy(true);
+    const d = await api("/api/reviews", "POST", { subjectUserId: tradieUserId, rating, text, authorRole: "builder" });
+    setBusy(false);
+    if (d.ok) {
+      setReviewFor(null);
+      toast(`Review posted for ${name}`);
+      router.refresh();
+    } else {
+      toast(d.error || "Could not post the review");
     }
   }
 
@@ -496,6 +533,31 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
               <h2>Post a job</h2>
               <span className="hint">Flat fee per post at launch — never per lead</span>
             </div>
+            {vm.availableTradies.length > 0 && (
+              <div className="card" style={{ padding: "1.2rem", maxWidth: 760, marginBottom: "1.2rem" }}>
+                <b style={{ fontFamily: "var(--fd)" }}>
+                  Available now{" "}
+                  <span className="pill ok" style={{ verticalAlign: "middle" }}>
+                    {vm.availableTradies.length} ready for day work
+                  </span>
+                </b>
+                <p className="hint" style={{ margin: ".2rem 0 .8rem" }}>
+                  Tradies who flipped on their Available Now toggle. Post a day-hire job and they can one-tap apply.
+                </p>
+                <div className="list">
+                  {vm.availableTradies.map((t, i) => (
+                    <div key={i} className="item" style={{ boxShadow: "none" }}>
+                      <span className="avatar" style={{ background: "var(--orange)" }}>{t.initials}</span>
+                      <div className="grow">
+                        <b>{t.name}</b>
+                        <span className="sub2">{t.sub2}</span>
+                      </div>
+                      <span className="pill ok">AVAILABLE</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <form className="form card" id="post-form" style={{ padding: "1.6rem", maxWidth: 760 }} onSubmit={submitJob}>
               <label>
                 Job title
@@ -530,10 +592,19 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                   <input type="text" name="duration" placeholder="e.g. 3 days / 2 weeks" />
                 </label>
                 <label>
-                  Requirements
-                  <input type="text" name="requirement" placeholder="e.g. Own tools, white card" />
+                  Trade
+                  <select name="trade" defaultValue="">
+                    <option value="">Select a trade…</option>
+                    {ALL_TRADES.map((t) => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </label>
               </div>
+              <label>
+                Requirements
+                <input type="text" name="requirement" placeholder="e.g. Own tools, white card" />
+              </label>
               <div className="hint">
                 Your BuildSafe status (
                 <span className={`pill ${vm.statusCls}`} style={{ verticalAlign: "middle" }}>
@@ -571,24 +642,57 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                     <b style={{ fontSize: ".8rem", color: "var(--slate)" }}>APPLICANTS ({j.apps.length})</b>
                     <div className="list" style={{ marginTop: ".6rem" }}>
                       {j.apps.map((a) => (
-                        <div key={a.id} className="item" style={{ boxShadow: "none" }}>
-                          <span className="avatar" style={{ background: "#2E5E8F" }}>{a.initials}</span>
-                          <div className="grow">
-                            <b>{a.name}</b>
-                            <span className="sub2">{a.sub2}</span>
+                        <div key={a.id}>
+                          <div className="item" style={{ boxShadow: "none" }}>
+                            <span className="avatar" style={{ background: "#2E5E8F" }}>{a.initials}</span>
+                            <div className="grow">
+                              <b>{a.name}</b>
+                              <span className="sub2">{a.sub2}</span>
+                            </div>
+                            {a.status === "contacted" ? (
+                              <span className="pill ok">Accepted ✓</span>
+                            ) : (
+                              <button
+                                className="btn btn-p btn-s"
+                                disabled={busy}
+                                onClick={() => acceptApplicant(a.id, a.name)}
+                              >
+                                Accept
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-g btn-s"
+                              onClick={() => setReviewFor(reviewFor === a.id ? null : a.id)}
+                            >
+                              {reviewFor === a.id ? "Cancel" : "Review"}
+                            </button>
                           </div>
-                          <button
-                            className="btn btn-p btn-s"
-                            onClick={() => toast(`${a.name} accepted — contact details unlocked`)}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            className="btn btn-g btn-s"
-                            onClick={() => toast(`Demo: opens ${a.name}'s full profile`)}
-                          >
-                            Profile
-                          </button>
+                          {reviewFor === a.id && (
+                            <form
+                              className="form card"
+                              style={{ padding: "1rem", margin: ".4rem 0 .2rem" }}
+                              onSubmit={(e) => submitTradieReview(e, a.tradieUserId, a.name)}
+                            >
+                              <label>
+                                Rating
+                                <select name="rating" defaultValue="5">
+                                  <option>5</option>
+                                  <option>4</option>
+                                  <option>3</option>
+                                  <option>2</option>
+                                  <option>1</option>
+                                </select>
+                              </label>
+                              <label>
+                                How were they on the job?{" "}
+                                <span className="hint">— turned up, on time, quality, rehire?</span>
+                                <textarea name="text" placeholder="Reliable, tidy work, would rehire…" required />
+                              </label>
+                              <button className="btn btn-d btn-s" style={{ justifySelf: "start" }} disabled={busy}>
+                                Post review
+                              </button>
+                            </form>
+                          )}
                         </div>
                       ))}
                       {j.apps.length === 0 && <p className="hint">No applicants yet — verified tradies apply free, zero lead fees.</p>}

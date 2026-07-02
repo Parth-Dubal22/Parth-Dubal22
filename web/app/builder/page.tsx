@@ -65,6 +65,23 @@ export default async function BuilderPage() {
     }),
   ]);
 
+  /* --- tradies flagged Available Now (day-work) — the toggle's promised visibility --- */
+  const availableRows = await db.query.tradieProfiles.findMany({
+    where: eq(tables.tradieProfiles.availableNow, true),
+    with: { user: { columns: { name: true } } },
+    limit: 12,
+  });
+  const availableTradies: BuilderVM["availableTradies"] = availableRows.map((tp) => {
+    const name = tp.businessName || tp.user.name;
+    const trade = tp.trades?.[0] ?? "Available";
+    const rel = tp.reliabilityScore != null ? `Reliability ${tp.reliabilityScore}/100` : null;
+    return {
+      name,
+      initials: initials(name),
+      sub2: [trade, tp.suburb, rel].filter(Boolean).join(" · "),
+    };
+  });
+
   /* --- upward watch (clients/developers): latest approved signal + logged exposure --- */
   const clientIds = watchRows.map((w) => w.companyId);
   const [clientSignals, exposures] =
@@ -171,6 +188,8 @@ export default async function BuilderPage() {
                 : "verification pending";
         return {
           id: a.id,
+          tradieUserId: a.tradieUserId,
+          status: a.status,
           name,
           initials: initials(name),
           sub2: [reliability, a.note, verified].filter(Boolean).join(" · "),
@@ -231,6 +250,7 @@ export default async function BuilderPage() {
     subbies,
     jobs,
     reviews,
+    availableTradies,
     paySummary:
       payReviews.length > 0
         ? { b: `${onTime}/${payReviews.length}`, s: "subbies report on-time payment (verified)" }
