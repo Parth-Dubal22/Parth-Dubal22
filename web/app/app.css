@@ -12,6 +12,45 @@
   --sh2:0 10px 32px rgba(10,27,46,.12);
   --sh3:0 28px 70px -14px rgba(10,27,46,.28);
   --fd:"Space Grotesk",sans-serif;--fb:"Inter",sans-serif;--fm:"JetBrains Mono",monospace;
+
+  /* == SPEC_V2 R2 tokens (design-system/MASTER.md §2.2) — extend, never replace == */
+  /* spacing scale (4px base) — snap every margin/padding/gap to a step */
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:20px;
+  --s6:24px;--s7:32px;--s8:48px;--s9:64px;--s10:96px;
+  /* section & module rhythm (§12) */
+  --sec-y:clamp(3rem,7vw,5rem);--sec-head-mb:3rem;
+  --stack-gap:1.6rem;--card-gap:1.3rem;--list-gap:.8rem;
+  /* control heights — ONE scale for buttons AND form fields */
+  --ctl-s:36px;--ctl-m:44px;--ctl-l:52px;
+  /* radii scale (migration map in MASTER §2.2; --r-4 = --r, --r-6 = --rl) */
+  --r-1:6px;--r-2:9px;--r-3:12px;--r-4:14px;--r-5:18px;--r-6:22px;--r-7:26px;--r-pill:999px;
+  /* shadows (sh1–sh3 above unchanged) */
+  --sh0:0 1px 2px rgba(10,27,46,.05);
+  --sh-cta:0 8px 20px -6px rgba(255,90,31,.5);
+  /* z-index scale */
+  --z-nav:100;--z-appbar:120;--z-scrim:140;--z-side:150;
+  --z-overlay:180;--z-modal:190;--z-toast:200;
+  /* motion: 150–300ms band; --ease is the approved reveal curve */
+  --t-1:150ms;--t-2:200ms;--t-3:300ms;
+  --ease:cubic-bezier(.2,.7,.2,1);
+  /* glass recipes (§3) */
+  --glass-bg:rgba(255,255,255,.78);--glass-bg-dark:rgba(10,27,46,.6);
+  --glass-blur:14px;--glass-line:rgba(226,232,242,.85);
+  /* focus & validation rings */
+  --focus-ring:3px solid var(--orange);
+  --ring-soft:0 0 0 4px rgba(255,90,31,.12);
+  --ring-danger:0 0 0 4px rgba(229,72,77,.14);
+  /* skeleton shimmer (§8) */
+  --skel-base:var(--cloud);--skel-sheen:rgba(255,255,255,.6);
+  /* chart palette — validated, FIXED slot order, never cycled (§11.5).
+     Status triad --risk/--watch/--clear is reserved for risk states, never series. */
+  --ch-1:#2E6FC9;--ch-2:#FF5A1F;--ch-3:#0C9DB0;--ch-4:#B87333;--ch-5:#A34A8E;
+  --ch-grid:var(--cloud);--ch-axis:var(--slate2);
+  /* neutral avatar palette (deterministic, never keyed to risk on public surfaces) */
+  --av-1:#2E5E8F;--av-2:#149E5F;--av-3:#B87333;--av-4:#41546B;
+  /* singletons */
+  --star:#F5A623;         /* SVG star fill (Stars component) */
+  --clear-ondark:#33C088; /* success/check strokes on navy */
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
@@ -29,35 +68,36 @@ h1{font-size:clamp(2.4rem,5.4vw,4rem)}h2{font-size:clamp(1.8rem,3.4vw,2.6rem)}h3
 .eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-family:var(--fm);font-size:.7rem;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);background:var(--osoft);padding:.4rem .8rem;border-radius:99px}
 .eyebrow::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--orange)}
 .mono{font-family:var(--fm)}
-.rv{opacity:0;transform:translateY(24px);transition:opacity .6s cubic-bezier(.2,.7,.2,1),transform .6s cubic-bezier(.2,.7,.2,1)}
+.rv{opacity:0;transform:translateY(24px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
 .rv.in{opacity:1;transform:none}
 .rv.d1{transition-delay:.08s}.rv.d2{transition-delay:.16s}.rv.d3{transition-delay:.24s}
 
-/* buttons */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:600;font-size:.94rem;padding:.7rem 1.3rem;border-radius:12px;transition:transform .15s,box-shadow .18s,background .18s;white-space:nowrap}
+/* buttons — R2 §4: one height scale with form fields, five-state contract */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;font-weight:600;font-size:.94rem;padding:.7rem 1.3rem;min-height:var(--ctl-m);border-radius:var(--r-3);transition:transform var(--t-1),box-shadow var(--t-1),background var(--t-1);white-space:nowrap;cursor:pointer}
 .btn:hover{transform:translateY(-1px)}.btn:active{transform:none}
-.btn-p{background:var(--orange);color:#fff;box-shadow:0 8px 20px -6px rgba(255,90,31,.5)}
+.btn-p{background:var(--orange);color:#fff;box-shadow:var(--sh-cta)}
 .btn-p:hover{background:#FF6B35}
 .btn-d{background:var(--navy);color:#fff;box-shadow:var(--sh1)}.btn-d:hover{background:var(--navy2)}
 .btn-g{border:1.5px solid var(--line);background:#fff;color:var(--ink)}.btn-g:hover{border-color:var(--slate2)}
-.btn-s{padding:.5rem .9rem;font-size:.82rem;border-radius:9px}
-.btn-lg{padding:.95rem 1.6rem;font-size:1rem;border-radius:14px}
-.btn[disabled]{opacity:.5;pointer-events:none}
+.btn-s{padding:.5rem .9rem;font-size:.82rem;border-radius:var(--r-2);min-height:var(--ctl-s)}
+.btn-lg{padding:.95rem 1.6rem;font-size:1rem;border-radius:var(--r-4);min-height:var(--ctl-l)}
+/* disabled: keep the not-allowed cursor visible (no pointer-events:none) — guard handlers in JS */
+.btn[disabled],.btn[aria-disabled=true]{opacity:.5;cursor:not-allowed;transform:none;box-shadow:none}
 
 /* pills & badges */
-.pill{font-family:var(--fm);font-size:.6rem;font-weight:600;letter-spacing:.08em;padding:.28rem .55rem;border-radius:6px;text-transform:uppercase;white-space:nowrap;display:inline-flex;align-items:center;gap:.3rem}
+.pill{font-family:var(--fm);font-size:.6rem;font-weight:600;letter-spacing:.08em;padding:.28rem .55rem;border-radius:var(--r-1);text-transform:uppercase;white-space:nowrap;display:inline-flex;align-items:center;gap:.3rem}
 .pill.risk{background:var(--rsoft);color:var(--risk)}.pill.watch{background:var(--wsoft);color:var(--watch)}.pill.ok{background:var(--csoft);color:var(--clear)}
 .pill.navy{background:var(--cloud);color:var(--navy)}
 .vbadge{display:inline-flex;align-items:center;gap:.35rem;background:var(--csoft);color:var(--clear);font-weight:600;font-size:.74rem;padding:.3rem .6rem;border-radius:99px}
 .vbadge svg{width:13px;height:13px}
-.stars{color:#F5A623;letter-spacing:1px;font-size:.9rem}
+.stars{color:var(--star);letter-spacing:1px;font-size:.9rem}
 .stars .dim{color:var(--cloud)}
 
-/* ---------- top nav (site) ---------- */
-.nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.8);backdrop-filter:blur(14px);border-bottom:1px solid rgba(226,232,242,.85)}
+/* ---------- top nav (site) — R2 §3 glass recipe (fallback in the R2 layer below) ---------- */
+.nav{position:sticky;top:0;z-index:var(--z-nav);background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-line)}
 .nav .wrap{display:flex;align-items:center;justify-content:space-between;height:70px}
 .logo{display:flex;align-items:center;gap:.55rem;font-family:var(--fd);font-weight:700;font-size:1.24rem}
-.logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--orange),var(--orange2));display:grid;place-items:center;box-shadow:0 4px 12px rgba(255,90,31,.35)}
+.logo-mark{width:32px;height:32px;border-radius:var(--r-2);background:linear-gradient(135deg,var(--orange),var(--orange2));display:grid;place-items:center;box-shadow:0 4px 12px rgba(255,90,31,.35)}
 .logo-mark svg{width:17px;height:17px}
 .nav-links{display:flex;align-items:center;gap:1.7rem}
 .nav-links a{font-size:.92rem;font-weight:500;color:var(--slate)}
@@ -72,7 +112,8 @@ h1{font-size:clamp(2.4rem,5.4vw,4rem)}h2{font-size:clamp(1.8rem,3.4vw,2.6rem)}h3
 .hero .sub{color:#B6C6DD;margin:1.3rem 0 1.9rem;max-width:50ch}
 .scene{position:absolute;inset:auto 0 0 0;height:46%;pointer-events:none;z-index:1}
 .scene svg{width:100%;height:100%}
-.search{display:flex;background:#fff;border-radius:15px;padding:.42rem;max-width:520px;box-shadow:var(--sh3)}
+.search{display:flex;background:#fff;border-radius:var(--r-4);padding:.42rem;max-width:520px;box-shadow:var(--sh3)}
+.search:focus-within{outline:3px solid var(--orange);outline-offset:2px} /* A6: inner input suppresses its outline */
 .search input{flex:1;border:none;outline:none;padding:.7rem 1rem;font-size:1rem;min-width:0;color:var(--ink)}
 .search input::placeholder{color:var(--slate2)}
 .hero-apps{display:flex;gap:.8rem;margin-top:1.6rem;flex-wrap:wrap}
@@ -97,9 +138,9 @@ h1{font-size:clamp(2.4rem,5.4vw,4rem)}h2{font-size:clamp(1.8rem,3.4vw,2.6rem)}h3
 .mcard b{font-size:.76rem;display:block}
 .mcard span{font-family:var(--fm);font-size:.56rem;color:var(--slate2)}
 .mrow{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
-.avatar{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;font-family:var(--fd);font-weight:600;font-size:.66rem;color:#fff;flex-shrink:0}
-.av-lg{width:64px;height:64px;border-radius:18px;font-size:1.2rem}
-.av-xl{width:92px;height:92px;border-radius:24px;font-size:1.7rem}
+.avatar{width:30px;height:30px;border-radius:var(--r-2);display:grid;place-items:center;font-family:var(--fd);font-weight:600;font-size:.66rem;color:#fff;flex-shrink:0}
+.av-lg{width:64px;height:64px;border-radius:var(--r-5);font-size:1.2rem}
+.av-xl{width:92px;height:92px;border-radius:var(--r-7);font-size:1.7rem}
 
 /* photo-art tiles (SVG/gradient "images") */
 .art{position:relative;border-radius:var(--r);overflow:hidden;background:linear-gradient(135deg,#12304F,#0A1B2E)}
@@ -108,11 +149,11 @@ h1{font-size:clamp(2.4rem,5.4vw,4rem)}h2{font-size:clamp(1.8rem,3.4vw,2.6rem)}h3
 .art::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 40%,rgba(10,21,36,.45));z-index:1}
 
 /* ---------- sections (landing) ---------- */
-section{padding:5rem 0}
-.sec-head{max-width:660px;margin:0 auto 3rem;text-align:center;display:grid;gap:1rem;justify-items:center}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1.3rem}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem}
-.card{background:#fff;border:1px solid var(--line);border-radius:var(--rl);padding:1.7rem;box-shadow:var(--sh1);transition:transform .22s,box-shadow .22s}
+section{padding:var(--sec-y) 0}
+.sec-head{max-width:660px;margin:0 auto var(--sec-head-mb);text-align:center;display:grid;gap:1rem;justify-items:center}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--card-gap)}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--card-gap)}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--rl);padding:1.7rem;box-shadow:var(--sh1);transition:transform var(--t-2),box-shadow var(--t-2)}
 .card:hover{transform:translateY(-4px);box-shadow:var(--sh2)}
 .ic{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;margin-bottom:1rem}
 .card p{color:var(--slate);font-size:.93rem;margin-top:.4rem}
@@ -123,7 +164,7 @@ section{padding:5rem 0}
 
 /* uber-style two-app section */
 .twoapps{background:var(--mist)}
-.appcard{background:#fff;border:1px solid var(--line);border-radius:26px;padding:2rem;box-shadow:var(--sh1);display:grid;gap:1rem;position:relative;overflow:hidden}
+.appcard{background:#fff;border:1px solid var(--line);border-radius:var(--r-7);padding:2rem;box-shadow:var(--sh1);display:grid;gap:1rem;position:relative;overflow:hidden}
 .appcard::before{content:"";position:absolute;top:0;left:0;right:0;height:5px}
 .appcard.cust::before{background:linear-gradient(90deg,var(--navy),#2E5E8F)}
 .appcard.pro::before{background:linear-gradient(90deg,var(--orange),var(--orange2))}
@@ -136,7 +177,7 @@ section{padding:5rem 0}
 .side{background:var(--navy);color:#fff;padding:1.4rem 1rem;display:flex;flex-direction:column;gap:.3rem;position:sticky;top:0;height:100vh}
 .side .logo{color:#fff;margin-bottom:1.4rem;padding-inline:.4rem}
 .side .role{font-family:var(--fm);font-size:.56rem;letter-spacing:.16em;color:#8FA5C4;text-transform:uppercase;padding:.2rem .6rem;margin-bottom:.6rem}
-.sbtn{display:flex;align-items:center;gap:.65rem;color:#A9BAD3;font-size:.88rem;font-weight:500;padding:.68rem .8rem;border-radius:11px;width:100%;text-align:left;transition:background .15s,color .15s}
+.sbtn{display:flex;align-items:center;gap:.65rem;color:#A9BAD3;font-size:.88rem;font-weight:500;padding:.68rem .8rem;border-radius:var(--r-3);width:100%;text-align:left;transition:background var(--t-1),color var(--t-1)}
 .sbtn svg{width:18px;height:18px;flex-shrink:0}
 .sbtn:hover{color:#fff;background:rgba(255,255,255,.07)}
 .sbtn.on{color:#fff;background:rgba(255,90,31,.18);box-shadow:inset 0 0 0 1px rgba(255,90,31,.35)}
@@ -146,14 +187,14 @@ section{padding:5rem 0}
 .main{padding:1.8rem 2rem 3rem;min-width:0}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.6rem;flex-wrap:wrap}
 .topbar h2{font-size:1.5rem}
-.panel{display:none}.panel.on{display:block;animation:fade .35s ease}
-@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1}}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.4rem}
+.panel{display:none}.panel.on{display:block;animation:fade var(--t-3) var(--ease)} /* §13: fade + 8px rise */
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1}}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--s4);margin-bottom:1.4rem}
 .kpi{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:1.1rem 1.2rem;box-shadow:var(--sh1)}
 .kpi small{font-family:var(--fm);font-size:.58rem;letter-spacing:.1em;text-transform:uppercase;color:var(--slate2)}
 .kpi b{display:block;font-family:var(--fd);font-size:1.7rem;margin-top:.15rem}
 .kpi b.risk{color:var(--risk)}.kpi b.ok{color:var(--clear)}.kpi b.or{color:var(--orange)}
-.list{display:grid;gap:.8rem}
+.list{display:grid;gap:var(--list-gap)}
 .item{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:1rem 1.15rem;box-shadow:var(--sh1);display:flex;align-items:center;gap:1rem;flex-wrap:wrap}
 .item .grow{flex:1;min-width:180px}
 .item b{display:block;font-size:.95rem}
@@ -168,29 +209,39 @@ section{padding:5rem 0}
 .form{display:grid;gap:1rem}
 .f2{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
 label{font-size:.78rem;font-weight:600;color:var(--slate);display:grid;gap:.4rem}
-input[type=text],input[type=email],input[type=number],input[type=date],select,textarea{
-  width:100%;background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:.72rem .85rem;font-size:.92rem;transition:border-color .15s,box-shadow .15s}
-input:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange);box-shadow:0 0 0 4px rgba(255,90,31,.12)}
-textarea{min-height:96px;resize:vertical}
+/* R2 §5 — ONE recipe for every text-like control (fixes AUDIT A1: /login + onboarding
+   password fields, plus tel/url/search/time, previously UA-default). :where() keeps
+   specificity at plain `input` so scoped overrides (.search input) still win. */
+input:where([type=text],[type=email],[type=password],[type=number],[type=date],
+  [type=tel],[type=url],[type=search],[type=time],[type=datetime-local]),
+select,textarea{
+  width:100%;min-height:var(--ctl-m);          /* 44px — same scale as buttons */
+  background:#fff;border:1.5px solid var(--line);border-radius:var(--r-3);
+  padding:.6rem .85rem;font:inherit;font-size:.92rem;line-height:1.45;color:var(--ink);
+  transition:border-color var(--t-1),box-shadow var(--t-1)}
+input::placeholder,textarea::placeholder{color:var(--slate2)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--orange);box-shadow:var(--ring-soft)}
+textarea{min-height:96px;resize:vertical;line-height:1.5}
 .hint{font-size:.72rem;color:var(--slate2);font-weight:400}
 .chips{display:flex;flex-wrap:wrap;gap:.5rem}
-.chip{border:1.5px solid var(--line);border-radius:99px;padding:.45rem .85rem;font-size:.82rem;font-weight:500;color:var(--slate);background:#fff;transition:all .15s}
+.chip{border:1.5px solid var(--line);border-radius:var(--r-pill);min-height:var(--ctl-s);padding:.45rem .85rem;font-size:.82rem;font-weight:500;color:var(--slate);background:#fff;transition:all var(--t-1);cursor:pointer;display:inline-flex;align-items:center;gap:.4rem}
 .chip:hover{border-color:var(--slate2)}
 .chip.on{border-color:var(--orange);background:var(--osoft);color:var(--orange)}
-.toast-fix{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;border-radius:12px;padding:.8rem 1.2rem;font-size:.88rem;box-shadow:var(--sh3);opacity:0;pointer-events:none;transition:all .3s;z-index:200;display:flex;gap:.55rem;align-items:center}
+.toast-fix{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;border-radius:var(--r-3);padding:.8rem 1.2rem;font-size:.88rem;box-shadow:var(--sh3);opacity:0;pointer-events:none;transition:all var(--t-3) var(--ease);z-index:var(--z-toast);display:flex;gap:.55rem;align-items:center}
 .toast-fix.show{opacity:1;transform:translateX(-50%) translateY(0)}
 .toast-fix svg{width:16px;height:16px;color:#7CE3AE}
 
-/* toggle */
-.tog{display:inline-flex;align-items:center;gap:.7rem;background:#fff;border:1.5px solid var(--line);border-radius:99px;padding:.5rem .55rem .5rem 1rem;box-shadow:var(--sh1)}
+/* toggle — R2 A12: knob animates transform, never `left` (layout property) */
+.tog{display:inline-flex;align-items:center;gap:.7rem;background:#fff;border:1.5px solid var(--line);border-radius:var(--r-pill);padding:.5rem .55rem .5rem 1rem;box-shadow:var(--sh1);cursor:pointer}
 .tog span{font-size:.82rem;font-weight:600}
-.tog .knob{width:44px;height:24px;border-radius:99px;background:var(--cloud);position:relative;transition:background .2s}
-.tog .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--sh1);transition:left .2s}
+.tog .knob{width:44px;height:24px;border-radius:var(--r-pill);background:var(--cloud);position:relative;transition:background var(--t-2)}
+.tog .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:var(--sh1);transition:transform var(--t-2) var(--ease)}
 .tog[aria-pressed=true] .knob{background:var(--clear)}
-.tog[aria-pressed=true] .knob::after{left:23px}
+.tog[aria-pressed=true] .knob::after{transform:translateX(20px)}
+.tog:disabled,.tog[aria-disabled=true]{opacity:.5;cursor:not-allowed}
 
 /* job cards */
-.jobcard{background:#fff;border:1px solid var(--line);border-radius:var(--rl);padding:1.25rem 1.35rem;box-shadow:var(--sh1);transition:transform .2s,box-shadow .2s}
+.jobcard{background:#fff;border:1px solid var(--line);border-radius:var(--rl);padding:1.25rem 1.35rem;box-shadow:var(--sh1);transition:transform var(--t-2),box-shadow var(--t-2)}
 .jobcard:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
 .jobcard .top{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start}
 .jobcard h4{font-size:1.05rem}
@@ -214,23 +265,23 @@ textarea{min-height:96px;resize:vertical}
 
 /* onboarding */
 .ob{min-height:100vh;background:linear-gradient(180deg,var(--mist),#fff);display:grid;place-items:center;padding:2.5rem 0}
-.ob-card{width:min(680px,92%);background:#fff;border:1px solid var(--line);border-radius:28px;box-shadow:var(--sh3);padding:2.4rem}
+.ob-card{width:min(680px,92%);background:#fff;border:1px solid var(--line);border-radius:var(--r-7);box-shadow:var(--sh3);padding:2.4rem}
 .roles{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1.6rem}
-.role{border:1.5px solid var(--line);border-radius:18px;padding:1.4rem 1.2rem;text-align:left;transition:all .18s;background:#fff}
+.role{border:1.5px solid var(--line);border-radius:var(--r-5);padding:1.4rem 1.2rem;text-align:left;transition:all var(--t-2);background:#fff}
 .role:hover{transform:translateY(-3px);box-shadow:var(--sh2)}
 .role.on{border-color:var(--orange);background:var(--osoft)}
 .role .ic{margin-bottom:.8rem}
 .role b{font-family:var(--fd);font-size:1.02rem;display:block}
 .role span{font-size:.8rem;color:var(--slate)}
 .prog{display:flex;gap:.4rem;margin-bottom:1.6rem}
-.prog i{height:5px;flex:1;border-radius:99px;background:var(--cloud);transition:background .3s}
+.prog i{height:5px;flex:1;border-radius:var(--r-pill);background:var(--cloud);transition:background var(--t-3)}
 .prog i.on{background:var(--orange)}
-.ob-step{display:none}.ob-step.on{display:block;animation:fade .35s}
+.ob-step{display:none}.ob-step.on{display:block;animation:fade var(--t-3) var(--ease)}
 .ob-nav{display:flex;justify-content:space-between;margin-top:1.8rem}
 
 /* directory */
 .filters{display:flex;gap:.7rem;flex-wrap:wrap;margin-bottom:1.3rem}
-.bcard{background:#fff;border:1px solid var(--line);border-radius:var(--rl);box-shadow:var(--sh1);overflow:hidden;transition:transform .2s,box-shadow .2s}
+.bcard{background:#fff;border:1px solid var(--line);border-radius:var(--rl);box-shadow:var(--sh1);overflow:hidden;transition:transform var(--t-2),box-shadow var(--t-2)}
 .bcard:hover{transform:translateY(-4px);box-shadow:var(--sh2)}
 .bcard .art{aspect-ratio:16/8;border-radius:0}
 .bcard .bod{padding:1.15rem 1.25rem 1.3rem}
@@ -252,7 +303,7 @@ footer{padding:3rem 0 2.2rem;border-top:1px solid var(--line);background:#fff}
   .grid3,.roles,.kpis{grid-template-columns:1fr 1fr}
   .portfolio{grid-template-columns:1fr 1fr}
   .app{grid-template-columns:1fr}
-  .side{position:fixed;inset:0 30% 0 0;z-index:150;transform:translateX(-100%);transition:transform .25s;height:100vh}
+  .side{position:fixed;inset:0 30% 0 0;z-index:var(--z-side);transform:translateX(-100%);transition:transform var(--t-3) var(--ease);height:100vh}
   .side.open{transform:none}
   .main{padding:1.2rem 1.1rem 3rem}
   .appbar{display:flex!important}
@@ -262,4 +313,236 @@ footer{padding:3rem 0 2.2rem;border-top:1px solid var(--line);background:#fff}
   .grid3,.roles,.kpis,.f2{grid-template-columns:1fr}
   .search{flex-direction:column;padding:.55rem}.search .btn{width:100%}
 }
-.appbar{display:none;position:sticky;top:0;z-index:120;background:var(--navy);color:#fff;padding:.8rem 1rem;align-items:center;justify-content:space-between}
+.appbar{display:none;position:sticky;top:0;z-index:var(--z-appbar);background:var(--navy);color:#fff;padding:.8rem 1rem;align-items:center;justify-content:space-between}
+
+/* ============================================================
+   SPEC_V2 R2 SYSTEM LAYER — design-system/MASTER.md
+   New tokens live in :root at the top of this sheet (§2.2).
+   Everything below is additive: base components consumed by the
+   R2 page sweeps. Do not restate these values inline in pages.
+   Section refs (§n) point at MASTER.md.
+   ============================================================ */
+
+/* ---- a11y utilities ---- */
+.vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* §13: scroll-reveal must never hide content when JS is absent (marketing-only class) */
+@media (scripting:none){.rv{opacity:1;transform:none}}
+.no-js .rv{opacity:1;transform:none}
+
+/* ---- §3 glass recipes (chrome only: nav, appbar, caption chips, scrims) ---- */
+.glass{background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-line)}
+.glass-dark{background:var(--glass-bg-dark);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);color:#fff}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .glass,.nav{background:rgba(255,255,255,.96)}
+  .glass-dark{background:rgba(10,27,46,.9)}
+}
+
+/* ---- §4 buttons: remaining states + variants ----
+   Busy pattern: add .busy + aria-busy="true", KEEP the label ("Signing in…"),
+   set min-width to the idle width so the button doesn't reflow.
+   Scope busy per action — never one flag for the whole view. */
+.btn:focus-visible{outline:var(--focus-ring);outline-offset:2px}
+.btn-w{background:#fff;color:var(--ink)}          /* on-dark (navy/hero) — replaces inline rgba(255,255,255,.95) hacks */
+.btn-w:hover{background:var(--mist)}
+.btn-danger{background:var(--risk);color:#fff}    /* confirm dialogs only; list "Remove" stays .btn-g */
+.btn-danger:hover{background:#D13438}
+.btn.busy{position:relative;cursor:progress}
+.btn.busy:not(:has(.spin))::after{content:"";width:16px;height:16px;flex:none;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:spin .8s linear infinite}
+.btn.busy>.spin{width:16px;height:16px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.btn.busy:not(:has(.spin))::after{display:none}}
+
+/* ---- §5 forms: select chevron, checks, states, errors, widths ---- */
+select{appearance:none;-webkit-appearance:none;padding-right:2.4rem;
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236E7D93' stroke-width='2' stroke-linecap='round'><path d='M6 9l6 6 6-6'/></svg>");
+  background-repeat:no-repeat;background-position:right .85rem center;background-size:16px}
+input[type=checkbox],input[type=radio]{width:18px;height:18px;accent-color:var(--orange);flex:none;cursor:pointer;margin:0}
+label.check-row{display:flex;align-items:center;gap:.55rem;font-weight:500;min-height:var(--ctl-s)}
+input:disabled,select:disabled,textarea:disabled,input[readonly]{background:var(--mist);color:var(--slate2);cursor:not-allowed}
+[aria-invalid=true]{border-color:var(--risk)!important;box-shadow:var(--ring-danger)}
+.field-error{display:flex;align-items:center;gap:.4rem;color:var(--risk);font-size:.8rem;font-weight:500;margin-top:.35rem} /* <p class="field-error" role="alert"> */
+.field-error svg{width:14px;height:14px;flex:none}
+.field-legend{font-size:.78rem;font-weight:600;color:var(--slate);display:block;margin-bottom:.5rem} /* label-look heading with no control */
+/* inline-form width wrappers — never per-instance style={{maxWidth}} */
+.w-s{width:140px;max-width:100%}.w-m{width:230px;max-width:100%}.w-l{width:320px;max-width:100%}
+/* submit/CTA rows — replaces justifySelf:"start" and ad-hoc flex rows */
+.actions{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center}
+.form .actions{justify-self:start}
+
+/* ---- §6 card modifiers ---- */
+.item.flat,.card.flat,.jobcard.flat{box-shadow:none;border:1px solid var(--line)} /* nested lists — replaces style={{boxShadow:"none"}} */
+.card.flat:hover,.jobcard.flat:hover{transform:none;box-shadow:none}
+.card.tier-active{border-color:var(--clear)}
+.mcard.strip-ok,.card.strip-ok{border-left:4px solid var(--clear)}
+.mcard.strip-risk,.card.strip-risk{border-left:4px solid var(--risk)}
+.mcard.strip-or,.card.strip-or{border-left:4px solid var(--orange)}
+
+/* ---- §7 sidebar count badge + mobile drawer scrim ---- */
+.sbtn .count{margin-left:auto;background:var(--orange);color:#fff;font:600 .62rem var(--fm);min-width:18px;height:18px;border-radius:var(--r-pill);display:grid;place-items:center;padding:0 .3rem}
+/* opening .side adds .side-scrim; lock body scroll, close on click + Escape, return focus to burger */
+.side-scrim{position:fixed;inset:0;background:rgba(10,27,46,.45);z-index:var(--z-scrim);border:0;padding:0;cursor:pointer;animation:fade var(--t-3) var(--ease)}
+
+/* ---- §8 skeleton loaders ----
+   Container: aria-busy="true" + <span class="vh">Loading…</span>; skeleton nodes
+   aria-hidden="true"; render the EXPECTED count (default 3) in the real grid.
+   Reduced-motion: global kill-switch freezes the sheen (static --cloud block stays). */
+.skel{position:relative;overflow:hidden;background:var(--skel-base);border-radius:var(--r-3)}
+.skel::after{content:"";position:absolute;inset:0;transform:translateX(-100%);
+  background:linear-gradient(90deg,transparent,var(--skel-sheen),transparent);
+  animation:skel-sheen 1.4s ease-in-out infinite}
+@keyframes skel-sheen{to{transform:translateX(100%)}}
+.skel-text{height:.8em;border-radius:var(--r-1)}
+.skel-title{height:1.1em;width:40%;border-radius:var(--r-1)}
+.skel-avatar{width:30px;height:30px;border-radius:var(--r-2)}
+.skel-kpi{height:86px;border-radius:var(--r-4)}
+.skel-item{height:74px;border-radius:var(--r-4)}
+.skel-card{height:180px;border-radius:var(--r-6)}
+.skel-photo{aspect-ratio:16/10;border-radius:var(--r-4)}
+
+/* ---- §9 empty state: illustration (72px line art) + headline + one sentence + ONE CTA ---- */
+.empty{display:grid;justify-items:center;text-align:center;gap:.35rem;
+  padding:2.4rem 1.5rem;background:#fff;border:1.5px dashed var(--line);border-radius:var(--r-6)}
+.empty svg{width:72px;height:72px;color:var(--slate2);margin-bottom:.6rem}
+.empty h3{font-size:1.05rem}
+.empty p{color:var(--slate);font-size:.9rem;max-width:38ch}
+.empty .btn{margin-top:.8rem}
+
+/* ---- §9 note banners — block-level status (pills stay inline labels) ----
+   role="status" (danger: role="alert"); text stays --ink, tint + icon carry the tone */
+.note{display:flex;align-items:flex-start;gap:.6rem;padding:.8rem 1rem;border-radius:var(--r-4);border:1px solid transparent;font-size:.88rem;line-height:1.5}
+.note svg{width:16px;height:16px;flex:none;margin-top:.15rem}
+.note.ok{background:var(--csoft);border-color:rgba(20,158,95,.3)}.note.ok svg{color:var(--clear)}
+.note.warn{background:var(--wsoft);border-color:rgba(233,149,12,.35)}.note.warn svg{color:var(--watch)}
+.note.danger{background:var(--rsoft);border-color:rgba(229,72,77,.3)}.note.danger svg{color:var(--risk)}
+.note.info{background:var(--cloud);border-color:rgba(10,27,46,.15)}.note.info svg{color:var(--navy)}
+
+/* ---- §9 toasts — queue + error variant ----
+   Timing lives in components/Toast.tsx: auto-dismiss 3500ms (ux-guidelines 3–5s),
+   hover pauses, queue max 3 (column-reverse stack). Every mutation fires exactly one toast. */
+.toast-stack{position:fixed;bottom:1.4rem;left:50%;transform:translateX(-50%);z-index:var(--z-toast);display:flex;flex-direction:column-reverse;align-items:center;gap:.5rem;pointer-events:none}
+.toast-stack .toast-fix{position:static;transform:translateY(20px);pointer-events:auto}
+.toast-stack .toast-fix.show{transform:none}
+.toast-fix.err svg{color:#FF9A9E}
+
+/* ---- §10 modal & drawer ----
+   Contract: role="dialog" aria-modal="true" + aria-labelledby; focus moves in,
+   is trapped, returns to trigger; Escape + scrim-click close; body scroll locked;
+   reduced-motion falls back via the global kill-switch. */
+.scrim{position:fixed;inset:0;background:rgba(10,27,46,.55);z-index:var(--z-overlay);animation:fade var(--t-3) var(--ease)}
+.modal{position:fixed;inset:0;display:grid;place-items:center;padding:1rem;z-index:var(--z-modal)}
+.modal-box{width:min(560px,100%);max-height:90dvh;overflow:auto;background:#fff;border-radius:var(--r-6);box-shadow:var(--sh3);padding:2rem;animation:fade var(--t-3) var(--ease)}
+.modal-box.confirm{width:min(440px,100%)} /* destructive confirms: .btn-danger is the primary */
+.modal-head{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.modal-x{width:36px;height:36px;flex:none;display:grid;place-items:center;border-radius:var(--r-2);color:var(--slate);cursor:pointer;transition:background var(--t-1),color var(--t-1)}
+.modal-x:hover{background:var(--mist);color:var(--ink)}
+.modal-x svg{width:18px;height:18px}
+.modal-foot{display:flex;justify-content:flex-end;gap:.6rem;margin-top:1.4rem} /* primary last */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(420px,92vw);background:#fff;box-shadow:var(--sh3);z-index:var(--z-modal);transform:translateX(100%);transition:transform var(--t-3) var(--ease)}
+.drawer.open{transform:none}
+
+/* ---- §11.1 photo card (16:10 everywhere; next/image fill + Art SVG onError fallback) ---- */
+.photo{position:relative;aspect-ratio:16/10;border-radius:var(--r-4);overflow:hidden;
+  background:linear-gradient(135deg,#12304F,#0A1B2E)}   /* navy base shows while loading */
+.photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--t-3) var(--ease)}
+.photo::after{content:"";position:absolute;inset:0;z-index:1;
+  background:linear-gradient(180deg,transparent 45%,rgba(10,21,36,.72))}  /* caption scrim — never put text on the top 45% */
+.photo .cap{position:absolute;left:.8rem;right:.8rem;bottom:.7rem;z-index:2;color:#fff}
+.photo .cap.micro{font:600 .6rem var(--fm);letter-spacing:.1em;text-transform:uppercase;
+  width:max-content;padding:.3rem .55rem;border-radius:var(--r-1);
+  background:var(--glass-bg-dark);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.photo .cap.title{font:700 1.02rem var(--fd)}
+
+/* ---- §11.2 category tile = .photo + interactive contract (whole tile is one <a>) ---- */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--s4)} /* 2-up minimum at 375px, never 1 column */
+.cat-tile{display:block;cursor:pointer;transition:box-shadow var(--t-2)}
+.cat-tile:hover,.cat-tile:focus-visible{box-shadow:var(--sh2)}
+.cat-tile:hover img,.cat-tile:focus-visible img{transform:scale(1.04)}   /* zoom the img, not the tile — no layout shift */
+.cat-tile .pill{position:absolute;top:.7rem;right:.7rem;z-index:2;background:var(--glass-bg-dark);color:#fff;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
+.cat-tile[aria-pressed=true]{outline:3px solid var(--orange);outline-offset:-3px}  /* selected (onboarding trade picker) — pair with a check chip */
+
+/* ---- §11.3 profile hero (replaces the inline <style> in b/[slug]; /t/[slug] reuses) ---- */
+.cover{height:clamp(150px,26vw,230px);border-radius:var(--r-7);overflow:hidden;position:relative;margin-bottom:-56px}
+.cover .photo,.cover .art{height:100%;border-radius:var(--r-7);aspect-ratio:auto}
+.phead-hero{position:relative;z-index:2}          /* the .phead card overlapping the cover */
+.phead-hero .avatar{box-shadow:0 0 0 4px #fff}    /* white ring lifts the avatar off the cover */
+.pwrap{width:min(980px,92%);margin-inline:auto;padding:2rem 0 4rem}
+@media(max-width:640px){.cover{margin-bottom:-40px}.phead-hero .av-xl{width:72px;height:72px}}
+
+/* ---- §11.4 KPI additions: label · value · optional delta · optional trend ----
+   Delta = signed value vs a named period, 12px SVG arrow (never ↑↓ text);
+   colour = direction × whether up is GOOD (rising exposure is .down/red). */
+.kpi .delta{display:inline-flex;align-items:center;gap:.25rem;font-size:.72rem;font-weight:600;margin-top:.2rem}
+.kpi .delta.up{color:var(--clear)}.kpi .delta.down{color:var(--risk)}
+.kpi .delta svg{width:12px;height:12px}
+.kpi .spark{margin-top:.5rem;height:28px}
+
+/* ---- §12 layout & rhythm utilities ---- */
+.wrap-narrow{width:min(860px,92%);margin-inline:auto}
+.stack{display:grid;gap:var(--stack-gap)}         /* app panel = vertical stack: topbar → kpis → [topbar → list]×n */
+.ob-card.narrow{width:min(480px,92%)}             /* login */
+.ob-card .logo{margin-bottom:1.4rem}
+
+/* ---- marketing on-dark components (dedupes landing/check/pricing inline blocks) ---- */
+.sec-navy{background:var(--navy);color:#fff}
+.sec-navy h2{color:#fff}
+.sec-navy .sub{color:#9DB0CC}
+.sec-navy .checks{color:#DDE7F3}
+.sec-navy .checks svg{color:var(--clear-ondark)}  /* mark up checks with stroke="currentColor" */
+.eyebrow.on-dark{background:rgba(255,90,31,.15)}
+.eyebrow.pro{background:var(--osoft);color:var(--orange)}
+.cta-band{position:relative;overflow:hidden;background:linear-gradient(160deg,#0F2440,#0A1B2E);color:#fff;border:none;border-radius:var(--r-7);padding:3.5rem 2rem;text-align:center}
+.cta-band h2{color:#fff}
+.cta-band .sub{color:#9DB0CC;max-width:52ch;margin:1rem auto 1.8rem}
+.cta-band .actions{display:flex;gap:.8rem;justify-content:center;flex-wrap:wrap}
+/* icon-square tints (replaces 8 inline bg/colour pairs) */
+.ic.navy{background:var(--cloud);color:var(--navy)}
+.ic.pro{background:var(--osoft);color:var(--orange)}
+.ic.risk{background:var(--rsoft);color:var(--risk)}
+.ic.watch{background:var(--wsoft);color:var(--watch)}
+.ic.ok{background:var(--csoft);color:var(--clear)}
+
+/* ---- text & micro utilities ---- */
+.micro{font-family:var(--fm);font-size:.66rem;color:var(--slate2);letter-spacing:.02em} /* one class for mono micro-lines (floor .58rem — never smaller) */
+.mini-h{display:block;font-size:.8rem;font-weight:600;color:var(--slate)}
+.link-accent{color:var(--orange);font-weight:600}
+.link-accent:hover{text-decoration:underline}
+.link-btn{display:inline-flex;align-items:center;gap:.35rem;font-family:var(--fm);font-size:.74rem;color:var(--slate);padding:.15rem .35rem;margin-inline:-.35rem;border-radius:var(--r-1);cursor:pointer;transition:color var(--t-1),background var(--t-1)}
+.link-btn:hover{color:var(--orange);background:var(--osoft)}
+.price{font-family:var(--fd);font-size:2.1rem;font-weight:700;line-height:1.1} /* display figures stay proportional — never tabular-nums */
+.sla{font-family:var(--fm);font-size:.66rem;color:var(--slate2)}
+.sla.late{color:var(--risk);font-weight:600}
+.review .rt b{font-size:.88rem}
+
+/* ---- criteria checklist (verification tiers — builder + admin share it) ---- */
+.criteria{list-style:none;display:grid;gap:.5rem;margin:.8rem 0 0;padding:0}
+.criteria li{display:flex;gap:.5rem;align-items:flex-start;font-size:.88rem;color:var(--slate)}
+.criteria svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--clear)}
+
+/* ---- tables (A14 gap — admin email log etc.) ---- */
+.tbl-wrap{background:#fff;border:1px solid var(--line);border-radius:var(--r-4);box-shadow:var(--sh1);overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:.88rem}
+.tbl th{font-family:var(--fm);font-size:.62rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--slate2);text-align:left;padding:.65rem .9rem;border-bottom:1px solid var(--line);white-space:nowrap}
+.tbl td{padding:.65rem .9rem;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tbody tr:last-child td{border-bottom:none}
+.tbl tbody tr:hover{background:var(--mist)}
+.tbl td.num{font-family:var(--fm);font-size:.76rem;color:var(--slate);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ---- app bar children (dedupes the 4 identical inline blocks) ---- */
+.appbar b{font-family:var(--fd)}
+.appbar .burger{display:flex}
+.appbar .burger span{background:#fff}
+.appbar .exit{font-family:var(--fm);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:#9DB0CC}
+
+/* ---- jobs paycheck row children (dedupes inline flex/type overrides) ---- */
+.paycheck .who{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;font-size:.84rem}
+.paycheck .who b{font-size:.84rem}
+
+/* ---- mobile nav dropdown (replaces the inline openMenu object in LandingNav/ProfileNav) ---- */
+.nav-links.open{display:flex;position:absolute;top:100%;left:0;right:0;flex-direction:column;align-items:flex-start;gap:1rem;background:#fff;border-bottom:1px solid var(--line);box-shadow:var(--sh2);padding:1.1rem 4%}
+
+/* ---- misc modifiers pages migrate onto ---- */
+.portfolio.two{grid-template-columns:1fr 1fr}
+
+/* ---- §13 page transition (app/template.tsx wraps every route in .page-in) ---- */
+.page-in{animation:pagein var(--t-3) var(--ease)}
+@keyframes pagein{from{opacity:0;transform:translateY(8px)}}
