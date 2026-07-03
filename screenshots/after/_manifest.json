@@ -1,0 +1,222 @@
+[
+  {
+    "name": "landing-1440.png",
+    "w": 1440,
+    "h": 4707
+  },
+  {
+    "name": "login-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "onboarding-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "check-1440.png",
+    "w": 1440,
+    "h": 2115
+  },
+  {
+    "name": "check-result-1440.png",
+    "w": 1440,
+    "h": 1017
+  },
+  {
+    "name": "find-1440.png",
+    "w": 1440,
+    "h": 7996
+  },
+  {
+    "name": "find-category-1440.png",
+    "w": 1440,
+    "h": 1933
+  },
+  {
+    "name": "find-suburb-1440.png",
+    "w": 1440,
+    "h": 1170
+  },
+  {
+    "name": "jobs-1440.png",
+    "w": 1440,
+    "h": 1525
+  },
+  {
+    "name": "pricing-1440.png",
+    "w": 1440,
+    "h": 1600
+  },
+  {
+    "name": "profile-1440.png",
+    "w": 1440,
+    "h": 1560
+  },
+  {
+    "name": "landing-375.png",
+    "w": 375,
+    "h": 7898
+  },
+  {
+    "name": "login-375.png",
+    "w": 375,
+    "h": 931
+  },
+  {
+    "name": "onboarding-375.png",
+    "w": 375,
+    "h": 1073
+  },
+  {
+    "name": "check-375.png",
+    "w": 375,
+    "h": 2841
+  },
+  {
+    "name": "check-result-375.png",
+    "w": 375,
+    "h": 1426
+  },
+  {
+    "name": "find-375.png",
+    "w": 375,
+    "h": 9816
+  },
+  {
+    "name": "find-category-375.png",
+    "w": 375,
+    "h": 2056
+  },
+  {
+    "name": "find-suburb-375.png",
+    "w": 375,
+    "h": 1173
+  },
+  {
+    "name": "jobs-375.png",
+    "w": 375,
+    "h": 4376
+  },
+  {
+    "name": "pricing-375.png",
+    "w": 375,
+    "h": 2395
+  },
+  {
+    "name": "profile-375.png",
+    "w": 375,
+    "h": 2988
+  },
+  {
+    "name": "tradie-dashboard-1440.png",
+    "w": 1440,
+    "h": 1176
+  },
+  {
+    "name": "tradie-watchlist-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "tradie-exposure-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "tradie-alerts-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "tradie-jobs-1440.png",
+    "w": 1440,
+    "h": 980
+  },
+  {
+    "name": "tradie-profile-1440.png",
+    "w": 1440,
+    "h": 1338
+  },
+  {
+    "name": "tradie-dashboard-375.png",
+    "w": 375,
+    "h": 2486
+  },
+  {
+    "name": "builder-overview-1440.png",
+    "w": 1440,
+    "h": 1061
+  },
+  {
+    "name": "builder-post-job-1440.png",
+    "w": 1440,
+    "h": 1146
+  },
+  {
+    "name": "builder-jobs-1440.png",
+    "w": 1440,
+    "h": 1572
+  },
+  {
+    "name": "builder-verification-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "builder-reviews-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "builder-overview-375.png",
+    "w": 375,
+    "h": 2444
+  },
+  {
+    "name": "customer-find-1440.png",
+    "w": 1440,
+    "h": 1282
+  },
+  {
+    "name": "customer-check-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "customer-requests-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "customer-find-375.png",
+    "w": 375,
+    "h": 3385
+  },
+  {
+    "name": "admin-signals-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "admin-verification-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "admin-disputes-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "admin-email-log-1440.png",
+    "w": 1440,
+    "h": 900
+  },
+  {
+    "name": "admin-signals-375.png",
+    "w": 375,
+    "h": 958
+  }
+]

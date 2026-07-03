@@ -74,10 +74,12 @@ interface SavedState {
 const WIZARD_CSS = `
 .auth-split{width:min(1180px,94%);display:grid;gap:1.6rem;justify-items:center;justify-content:center}
 .auth-side{display:none}
-@media(min-width:1024px){
-  .auth-split{grid-template-columns:minmax(0,680px) minmax(280px,360px);align-items:stretch;justify-items:stretch}
-  .auth-side{display:block}
-  .auth-side .photo{height:100%;border-radius:var(--r-7);box-shadow:var(--sh3)}
+@media(min-width:1080px){
+  .auth-split{grid-template-columns:minmax(0,680px) minmax(0,340px);align-items:stretch;justify-items:stretch}
+  .auth-side{display:block;min-width:0}
+  /* height from the stretched track; drop SitePhoto's inline aspect-ratio so it
+     can't derive an intrinsic WIDTH that overflows the column (audit fix). */
+  .auth-side .photo{height:100%;width:100%;aspect-ratio:auto!important;overflow:hidden;border-radius:var(--r-7);box-shadow:var(--sh3)}
   .auth-split .ob-card{width:100%}
 }
 .ob-step .sub{margin:.6rem 0 1.4rem}

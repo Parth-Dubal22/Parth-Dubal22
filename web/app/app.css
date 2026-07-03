@@ -3,7 +3,7 @@
    Fintech navy × signal orange · Space Grotesk / Inter / JetBrains Mono
    ============================================================ */
 :root{
-  --navy:#0A1B2E;--navy2:#0F2440;--ink:#0B1524;--slate:#4E5D77;--slate2:#6E7D93;
+  --navy:#0A1B2E;--navy2:#0F2440;--ink:#0B1524;--slate:#4E5D77;--slate2:#5C6B82;
   --paper:#FFF;--mist:#F5F7FB;--cloud:#E8EDF5;--line:#E2E8F2;
   --orange:#FF5A1F;--orange2:#FF8452;--osoft:#FFF0E9;
   --risk:#E5484D;--rsoft:#FDEBEC;--watch:#E9950C;--wsoft:#FEF4E2;--clear:#149E5F;--csoft:#E6F6EF;
@@ -90,8 +90,9 @@ h1{font-size:clamp(2.4rem,5.4vw,4rem)}h2{font-size:clamp(1.8rem,3.4vw,2.6rem)}h3
 .pill.navy{background:var(--cloud);color:var(--navy)}
 .vbadge{display:inline-flex;align-items:center;gap:.35rem;background:var(--csoft);color:var(--clear);font-weight:600;font-size:.74rem;padding:.3rem .6rem;border-radius:99px}
 .vbadge svg{width:13px;height:13px}
-.stars{color:var(--star);letter-spacing:1px;font-size:.9rem}
-.stars .dim{color:var(--cloud)}
+.stars{display:inline-flex;gap:1px;vertical-align:middle;font-size:.9rem}
+.stars .star{width:.95em;height:.95em;fill:var(--star)}
+.stars .star.dim{fill:var(--cloud)}
 
 /* ---------- top nav (site) — R2 §3 glass recipe (fallback in the R2 layer below) ---------- */
 .nav{position:sticky;top:0;z-index:var(--z-nav);background:var(--glass-bg);backdrop-filter:blur(var(--glass-blur));-webkit-backdrop-filter:blur(var(--glass-blur));border-bottom:1px solid var(--glass-line)}
