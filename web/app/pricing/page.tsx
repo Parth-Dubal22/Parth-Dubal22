@@ -50,14 +50,12 @@ export default async function Pricing({
     const isCurrent = sub?.plan === plan && (sub.status === "active" || sub.status === "past_due");
     if (isCurrent && sub) {
       return (
-        <div style={{ display: "flex", flexDirection: "column", gap: ".7rem", alignItems: "flex-start" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--s3)", alignItems: "flex-start" }}>
           <span className={`pill ${sub.status === "past_due" ? "watch" : "ok"}`}>
             {sub.status === "past_due" ? "Current plan — payment past due" : "Current plan"}
           </span>
           {sub.currentPeriodEnd && (
-            <span className="mono" style={{ fontSize: ".78rem", color: "var(--slate)" }}>
-              RENEWS {fmtDate(sub.currentPeriodEnd)}
-            </span>
+            <span className="micro">RENEWS {fmtDate(sub.currentPeriodEnd)}</span>
           )}
           <CancelButton />
         </div>
@@ -82,12 +80,20 @@ export default async function Pricing({
           </div>
 
           {sp.status === "success" && (
-            <p className="pill ok" role="status" style={{ marginBottom: "1.4rem" }}>
+            <p className="note ok" role="status" style={{ marginBottom: "var(--s5)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
               Payment received — your subscription is being activated.
             </p>
           )}
           {sp.status === "canceled" && (
-            <p className="pill watch" role="status" style={{ marginBottom: "1.4rem" }}>
+            <p className="note warn" role="status" style={{ marginBottom: "var(--s5)" }}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M12 8v5" />
+                <path d="M12 16.5h.01" />
+              </svg>
               Checkout cancelled — nothing was charged.
             </p>
           )}
@@ -96,9 +102,9 @@ export default async function Pricing({
             {/* TRADIE WATCH */}
             <div className="card rv">
               <span className="eyebrow">For tradies &amp; subbies</span>
-              <h3 style={{ marginTop: ".9rem" }}>Tradie Watch</h3>
-              <p style={{ margin: ".4rem 0 .2rem" }}>
-                <b className="mono" style={{ fontSize: "2.1rem" }}>$29</b>
+              <h3 style={{ marginTop: "var(--s4)" }}>Tradie Watch</h3>
+              <p style={{ margin: "var(--s2) 0 var(--s1)" }}>
+                <b className="price">$29</b>
                 <span className="mono" style={{ color: "var(--slate)" }}> /month</span>
               </p>
               <p className="hint">Cancel anytime. No lock-in contracts.</p>
@@ -124,17 +130,17 @@ export default async function Pricing({
                   Every alert cites its public source — verify in one tap
                 </li>
               </ul>
-              <div style={{ marginTop: "1.2rem" }}>{cta("tradie_watch")}</div>
+              <div className="actions" style={{ marginTop: "var(--s5)" }}>{cta("tradie_watch")}</div>
             </div>
 
             {/* BUILDER PRO */}
             <div className="card rv d1">
-              <span className="eyebrow" style={{ background: "var(--osoft)", color: "var(--orange)" }}>
+              <span className="eyebrow pro">
                 For builders
               </span>
-              <h3 style={{ marginTop: ".9rem" }}>Builder Pro</h3>
-              <p style={{ margin: ".4rem 0 .2rem" }}>
-                <b className="mono" style={{ fontSize: "2.1rem" }}>$99</b>
+              <h3 style={{ marginTop: "var(--s4)" }}>Builder Pro</h3>
+              <p style={{ margin: "var(--s2) 0 var(--s1)" }}>
+                <b className="price">$99</b>
                 <span className="mono" style={{ color: "var(--slate)" }}> /month</span>
               </p>
               <p className="hint">Cancel anytime. No lock-in contracts.</p>
@@ -160,7 +166,7 @@ export default async function Pricing({
                   Post subcontract packages &amp; day-hire free — tradies apply free too
                 </li>
               </ul>
-              <div style={{ marginTop: "1.2rem" }}>{cta("builder_pro")}</div>
+              <div className="actions" style={{ marginTop: "var(--s5)" }}>{cta("builder_pro")}</div>
             </div>
           </div>
         </div>
@@ -169,23 +175,14 @@ export default async function Pricing({
       {/* ANTI-PATTERN PLEDGE */}
       <section>
         <div className="wrap">
-          <div
-            className="appcard rv"
-            style={{
-              textAlign: "center",
-              padding: "3rem 2rem",
-              background: "linear-gradient(160deg,#0F2440,#0A1B2E)",
-              color: "#fff",
-              border: "none",
-            }}
-          >
-            <span className="eyebrow" style={{ background: "rgba(255,90,31,.15)" }}>
+          <div className="cta-band rv">
+            <span className="eyebrow on-dark">
               Our pledge
             </span>
-            <h2 style={{ color: "#fff", marginTop: "1rem" }}>
+            <h2 style={{ marginTop: "var(--s4)" }}>
               No pay-per-lead. No expiring credits. No lock-in contracts. Cancel anytime.
             </h2>
-            <p className="sub" style={{ color: "#9DB0CC", maxWidth: "56ch", margin: "1rem auto 0" }}>
+            <p className="sub" style={{ maxWidth: "56ch", marginBottom: 0 }}>
               We charge for monitoring and pro tools — never for the chance to work. Tradies never
               pay to apply. Builders never pay per applicant. Reviews are never suppressed.
             </p>

@@ -102,10 +102,10 @@ export default async function CheckResultPage({
     <>
       <LandingNav />
 
-      <section style={{ paddingTop: "3rem" }}>
-        <div className="wrap" style={{ maxWidth: 860 }}>
+      <section>
+        <div className="wrap-narrow">
           <span className="eyebrow">Free builder check · Public-record snapshot</span>
-          <div style={{ display: "flex", alignItems: "center", gap: ".8rem", flexWrap: "wrap", marginTop: "1.1rem" }}>
+          <div className="actions" style={{ marginTop: "var(--s4)" }}>
             <h2>{snap.name ?? check.query}</h2>
             {tierLabel && (
               <span className="vbadge">
@@ -116,12 +116,12 @@ export default async function CheckResultPage({
               </span>
             )}
           </div>
-          <div className="mono" style={{ fontSize: ".68rem", color: "var(--slate2)", marginTop: ".4rem" }}>
+          <div className="micro" style={{ marginTop: "var(--s2)" }}>
             {snap.abn ? `ABN ${formatAbn(snap.abn)} · ` : ""}CHECKED {fmtDate(checkedAt)} · QUERY: {check.query.toUpperCase()}
           </div>
 
           {found ? (
-            <div className="list" style={{ marginTop: "1.6rem" }}>
+            <div className="list" style={{ marginTop: "var(--stack-gap)" }}>
               {/* Registration */}
               <div className="item">
                 <div className="grow">
@@ -204,7 +204,7 @@ export default async function CheckResultPage({
               </div>
             </div>
           ) : (
-            <div className="card" style={{ marginTop: "1.6rem" }}>
+            <div className="card" style={{ marginTop: "var(--stack-gap)" }}>
               <h3>No record found</h3>
               <p>
                 We couldn&rsquo;t match &ldquo;{check.query}&rdquo; in the public registers we
@@ -212,15 +212,15 @@ export default async function CheckResultPage({
                 means — we never guess and we never fill gaps. Try the exact 11-digit ABN from a
                 quote or invoice, or check the spelling of the trading name.
               </p>
-              <div className="srcline" style={{ marginTop: ".8rem" }}>
+              <div className="srcline" style={{ marginTop: "var(--s3)" }}>
                 Search the registers yourself: <SourceLinks sources={snap.sources} />
               </div>
             </div>
           )}
 
           {deposit ? (
-            <div className="card" style={{ marginTop: "1.6rem", borderLeft: "4px solid var(--clear)" }}>
-              <h3 style={{ marginBottom: ".4rem" }}>Your deposit: {money(deposit)}</h3>
+            <div className="card strip-ok" style={{ marginTop: "var(--stack-gap)" }}>
+              <h3 style={{ marginBottom: "var(--s2)" }}>Your deposit: {money(deposit)}</h3>
               <p style={{ margin: 0 }}>
                 For a Victorian domestic building contract of {money(deposit)}, the statutory
                 deposit ceiling is{" "}
@@ -235,12 +235,12 @@ export default async function CheckResultPage({
             </div>
           ) : null}
 
-          <p className="mono" style={{ fontSize: ".64rem", color: "var(--slate2)", marginTop: "1rem" }}>
+          <p className="micro" style={{ marginTop: "var(--s4)" }}>
             LAST CHECKED {fmtDate(checkedAt)} · RECORDS CAN CHANGE — RE-CHECK BEFORE PAYING
           </p>
 
           {/* CTAs */}
-          <div style={{ display: "flex", gap: ".8rem", marginTop: "1.6rem", flexWrap: "wrap" }}>
+          <div className="actions" style={{ marginTop: "var(--stack-gap)" }}>
             <a className="btn btn-p" href="/onboarding?role=tradie">
               Watch this builder 24/7 →
             </a>
@@ -258,7 +258,7 @@ export default async function CheckResultPage({
           </div>
 
           {/* Disclaimer */}
-          <p className="f-legal" style={{ marginTop: "2.5rem" }}>
+          <p className="f-legal" style={{ marginTop: "var(--s7)" }}>
             This is a snapshot of facts drawn from public registers at the time of the check
             shown above — registration and licence statuses as published, and a count of adverse
             public records from the last 24 months, each verifiable at its source. It is general

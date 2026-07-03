@@ -14,7 +14,7 @@ export default function CheckForm() {
     e.preventDefault();
     const query = q.trim();
     if (!query) {
-      toast("Enter a builder name or ABN first.");
+      toast("Enter a builder name or ABN first.", { kind: "error" });
       return;
     }
     setBusy(true);
@@ -29,10 +29,10 @@ export default function CheckForm() {
         router.push(`/check/${data.slug}`);
         return;
       }
-      toast(data.error || "Check failed — please try again.");
+      toast(data.error || "Check failed — please try again.", { kind: "error" });
       setBusy(false);
     } catch {
-      toast("Check failed — please try again.");
+      toast("Check failed — please try again.", { kind: "error" });
       setBusy(false);
     }
   }
@@ -46,7 +46,12 @@ export default function CheckForm() {
         placeholder="Check a builder — name or ABN…"
         aria-label="Builder name or ABN"
       />
-      <button className="btn btn-p btn-lg" type="submit" disabled={busy}>
+      <button
+        className={`btn btn-p btn-lg${busy ? " busy" : ""}`}
+        type="submit"
+        disabled={busy}
+        aria-busy={busy || undefined}
+      >
         {busy ? "Checking…" : "Check free"}
       </button>
     </form>

@@ -21,7 +21,7 @@ export function SubscribeButton({ plan, label }: { plan: Plan; label: string }) 
       });
       const data: { ok: boolean; url?: string; demo?: boolean; error?: string } = await res.json();
       if (!data.ok) {
-        toast(data.error ?? "Something went wrong — please try again.");
+        toast(data.error ?? "Something went wrong — please try again.", { kind: "error" });
         return;
       }
       if (data.url) {
@@ -33,14 +33,20 @@ export function SubscribeButton({ plan, label }: { plan: Plan; label: string }) 
         router.refresh();
       }
     } catch {
-      toast("Network error — please try again.");
+      toast("Network error — please try again.", { kind: "error" });
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button className="btn btn-p" onClick={subscribe} disabled={busy} aria-label={label}>
+    <button
+      className={`btn btn-p${busy ? " busy" : ""}`}
+      onClick={subscribe}
+      disabled={busy}
+      aria-busy={busy || undefined}
+      aria-label={label}
+    >
       {busy ? "Starting checkout…" : label}
     </button>
   );
@@ -56,20 +62,26 @@ export function CancelButton() {
       const res = await fetch("/api/billing/cancel", { method: "POST" });
       const data: { ok: boolean; error?: string } = await res.json();
       if (!data.ok) {
-        toast(data.error ?? "Something went wrong — please try again.");
+        toast(data.error ?? "Something went wrong — please try again.", { kind: "error" });
         return;
       }
       toast("Cancelled — no lock-ins. Access continues until the end of your billing period.");
       router.refresh();
     } catch {
-      toast("Network error — please try again.");
+      toast("Network error — please try again.", { kind: "error" });
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <button className="btn btn-g btn-s" onClick={cancel} disabled={busy} aria-label="Cancel subscription">
+    <button
+      className={`btn btn-g btn-s${busy ? " busy" : ""}`}
+      onClick={cancel}
+      disabled={busy}
+      aria-busy={busy || undefined}
+      aria-label="Cancel subscription"
+    >
       {busy ? "Cancelling…" : "Cancel subscription"}
     </button>
   );

@@ -13,12 +13,12 @@ export default function ExposureCalculator() {
   const fmt = "$" + total.toLocaleString("en-AU");
 
   return (
-    <div className="appcard pro rv" style={{ maxWidth: 720, margin: "0 auto" }}>
+    <div className="appcard pro rv wrap-narrow">
       <h3>How much of your money is riding on your builders?</h3>
-      <p style={{ color: "var(--slate)", fontSize: ".92rem" }}>
+      <p className="sub" style={{ fontSize: ".92rem" }}>
         Enter your numbers — the maths happens on your device and nothing is stored.
       </p>
-      <div className="grid2" style={{ gap: "1rem" }}>
+      <div className="grid2">
         <label htmlFor="exp-builders">
           Builders you work under
           <input
@@ -44,13 +44,13 @@ export default function ExposureCalculator() {
           />
         </label>
       </div>
-      <div className="mcard" style={{ borderLeft: "4px solid var(--orange)" }}>
+      <div className="mcard strip-or">
         <b style={{ fontSize: "1.05rem" }}>
           You could have {fmt} riding on builders&rsquo; solvency right now. Check them free.
         </b>
         <span>YOUR NUMBERS · CALCULATED ON THIS PAGE · NOT STORED</span>
       </div>
-      <div>
+      <div className="actions">
         <Link className="btn btn-p btn-lg" href="/check">
           Check your builders free →
         </Link>

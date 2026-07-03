@@ -1,29 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import type { CSSProperties } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 
-/** Mobile dropdown styling for the .nav-links menu when the burger is open.
- *  (app.css hides .nav-links under 640px; this inline style reveals it as a
- *  dropdown under the sticky header without touching the shared stylesheet.) */
-const openMenu: CSSProperties = {
-  display: "flex",
-  position: "absolute",
-  top: "100%",
-  left: 0,
-  right: 0,
-  flexDirection: "column",
-  alignItems: "flex-start",
-  gap: "1rem",
-  background: "#fff",
-  borderBottom: "1px solid var(--line)",
-  boxShadow: "var(--sh2)",
-  padding: "1.1rem 4%",
-};
-
+/** Marketing site nav. Mobile: app.css hides .nav-links under 640px; the burger
+ *  toggles the `.nav-links.open` dropdown (recipe lives in app.css — no inline
+ *  styles). Escape closes the menu and returns focus to the burger; clicking a
+ *  link closes it (navigation follows). */
 export default function LandingNav() {
   const [open, setOpen] = useState(false);
+  const burgerRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        burgerRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <header className="nav">
       <div className="wrap">
@@ -44,10 +43,12 @@ export default function LandingNav() {
           BuildSafe
         </Link>
         <nav
-          className="nav-links"
+          className={`nav-links${open ? " open" : ""}`}
           id="site-menu"
-          style={open ? openMenu : undefined}
-          onClick={() => setOpen(false)}
+          onClick={(e) => {
+            // close on link activation only — clicks on the menu surface keep it open
+            if ((e.target as HTMLElement).closest("a")) setOpen(false);
+          }}
         >
           <a href="/customer">For customers</a>
           <a href="/tradie">For tradies</a>
@@ -56,6 +57,7 @@ export default function LandingNav() {
           <a className="btn btn-p" href="/onboarding">Get started</a>
         </nav>
         <button
+          ref={burgerRef}
           className="burger"
           aria-label="Menu"
           aria-expanded={open}

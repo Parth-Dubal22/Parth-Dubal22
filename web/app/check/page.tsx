@@ -32,10 +32,10 @@ export default async function CheckPage({
       <section className="hero">
         <div className="wrap">
           <div>
-            <span className="eyebrow" style={{ background: "rgba(255,90,31,.15)" }}>
+            <span className="eyebrow on-dark">
               Free builder check · No signup · No credit card
             </span>
-            <h1 style={{ marginTop: "1.3rem" }}>
+            <h1 style={{ marginTop: "var(--s5)" }}>
               Check any builder <em>before money changes hands.</em>
             </h1>
             <p className="sub">
@@ -78,7 +78,7 @@ export default async function CheckPage({
           </div>
           <div className="grid3">
             <div className="card rv">
-              <span className="ic" style={{ background: "var(--cloud)", color: "var(--navy)" }}>
+              <span className="ic navy">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="3" y="4" width="18" height="16" rx="2" />
                   <path d="M3 9h18M8 14h8" />
@@ -91,7 +91,7 @@ export default async function CheckPage({
               </p>
             </div>
             <div className="card rv d1">
-              <span className="ic" style={{ background: "var(--csoft)", color: "var(--clear)" }}>
+              <span className="ic ok">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />
                   <path d="M9 12l2 2 4-4" />
@@ -104,7 +104,7 @@ export default async function CheckPage({
               </p>
             </div>
             <div className="card rv d2">
-              <span className="ic" style={{ background: "var(--rsoft)", color: "var(--risk)" }}>
+              <span className="ic risk">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M14 3H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V9z" />
                   <path d="M14 3v6h6M9 13h6M9 17h6" />
@@ -121,32 +121,32 @@ export default async function CheckPage({
       </section>
 
       {/* HOW TO READ A CHECK — ACL-safe framing */}
-      <section style={{ background: "var(--navy)", color: "#fff" }}>
+      <section className="sec-navy">
         <div className="wrap split">
           <div className="rv">
-            <span className="eyebrow" style={{ background: "rgba(255,90,31,.15)" }}>
+            <span className="eyebrow on-dark">
               How to read a check
             </span>
-            <h2 style={{ color: "#fff", marginTop: "1rem" }}>Facts with sources — not verdicts.</h2>
-            <p className="sub" style={{ color: "#9DB0CC", marginTop: "1rem" }}>
+            <h2 style={{ marginTop: "var(--s4)" }}>Facts with sources — not verdicts.</h2>
+            <p className="sub" style={{ marginTop: "var(--s4)" }}>
               BuildSafe monitors public records and flags signals. A check shows what the
               registers said at the moment we looked — nothing more, nothing less.
             </p>
-            <ul className="checks" style={{ color: "#DDE7F3" }}>
+            <ul className="checks">
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#33C088" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
                 Every fact cites its public source — verify it in one tap
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#33C088" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
                 Every result shows when it was checked — records change, so re-check before paying
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#33C088" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
                 Not a prediction, not advice — a snapshot of published facts; corrections within 48h

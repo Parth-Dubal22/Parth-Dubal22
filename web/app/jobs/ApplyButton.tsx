@@ -23,23 +23,25 @@ export default function ApplyButton({ jobId }: { jobId: number }) {
         toast("Already applied");
       } else {
         setState("idle");
-        toast(data.error ?? "Something went wrong — try again.");
+        toast(data.error ?? "Something went wrong — try again.", { kind: "error" });
       }
     } catch {
       setState("idle");
-      toast("Network error — try again.");
+      toast("Network error — try again.", { kind: "error" });
     }
   }
 
   if (state === "applied") return <span className="pill ok">Applied ✓</span>;
+  const busy = state === "busy";
   return (
     <button
-      className="btn btn-p btn-s"
+      className={`btn btn-p btn-s${busy ? " busy" : ""}`}
       onClick={apply}
-      disabled={state === "busy"}
+      disabled={busy}
+      aria-busy={busy || undefined}
       aria-label="Apply for this job — free, zero lead fees"
     >
-      Apply now
+      {busy ? "Applying…" : "Apply now"}
     </button>
   );
 }

@@ -1,10 +1,42 @@
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import Art from "@/components/Art";
+import SitePhoto from "@/components/SitePhoto";
 import LandingNav from "@/components/landing/LandingNav";
 import ExposureCalculator from "@/components/landing/ExposureCalculator";
 
 export const dynamic = "force-dynamic";
+
+/** 24-grid stroke check (house icon style) — replaces ✓ text glyphs in the mock. */
+const MiniCheck = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="var(--clear)"
+    strokeWidth="3"
+    strokeLinecap="round"
+    aria-hidden="true"
+    style={{ display: "inline-block", flex: "none" }}
+  >
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+);
+
+/** Tiny SVG star — replaces ★ text glyphs outside .stars/.pill (MASTER §13.3). */
+const MiniStar = () => (
+  <svg
+    width="10"
+    height="10"
+    viewBox="0 0 24 24"
+    fill="var(--star)"
+    aria-hidden="true"
+    style={{ display: "inline-block", flex: "none" }}
+  >
+    <path d="M12 2.5l2.95 5.98 6.6.96-4.78 4.65 1.13 6.57L12 17.56l-5.9 3.1 1.13-6.57-4.78-4.65 6.6-.96z" />
+  </svg>
+);
 
 export default async function Landing() {
   // Resolve the sample profile link from the DB (prototype: profile.html?b=rh).
@@ -20,12 +52,30 @@ export default async function Landing() {
 
       {/* HERO */}
       <section className="hero">
+        {/* R1: real-photo backdrop layer (landing-hero slot) — sits under the wrap (z2)
+            and the skyline scene (z1); low opacity keeps white-on-navy text ≥4.5:1.
+            SVG fallback renders until the photo pipeline runs (by design). */}
+        <div
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            inset: 0,
+            zIndex: 0,
+            overflow: "hidden",
+            display: "grid",
+            alignItems: "end",
+            opacity: 0.22,
+            pointerEvents: "none",
+          }}
+        >
+          <SitePhoto slot="landing-hero" priority showAttribution={false} sizes="100vw" />
+        </div>
         <div className="wrap">
           <div>
-            <span className="eyebrow" style={{ background: "rgba(255,90,31,.15)" }}>
+            <span className="eyebrow on-dark">
               One platform · Two apps · Every side protected
             </span>
-            <h1 style={{ marginTop: "1.3rem" }}>
+            <h1 style={{ marginTop: "var(--s5)" }}>
               The build platform where <em>everyone gets paid.</em>
             </h1>
             <p className="sub">
@@ -45,13 +95,13 @@ export default async function Landing() {
               </button>
             </form>
             <div className="hero-apps">
-              <a className="btn btn-g" href="/customer" style={{ background: "rgba(255,255,255,.95)" }}>
+              <a className="btn btn-w" href="/customer">
                 Open Customer app →
               </a>
-              <a className="btn btn-g" href="/tradie" style={{ background: "rgba(255,255,255,.95)" }}>
+              <a className="btn btn-w" href="/tradie">
                 Open Tradie app →
               </a>
-              <a className="btn btn-g" href="/builder" style={{ background: "rgba(255,255,255,.95)" }}>
+              <a className="btn btn-w" href="/builder">
                 Open Builder app →
               </a>
             </div>
@@ -77,7 +127,7 @@ export default async function Landing() {
               <div className="scr">
                 <div className="p-head">
                   <div className="who">
-                    <span className="avatar" style={{ background: "#2E5E8F" }}>C</span>
+                    <span className="avatar" style={{ background: "var(--av-1)" }}>C</span>
                     <b>Customer</b>
                   </div>
                   <span className="p-tag">HIRE SAFE</span>
@@ -91,7 +141,9 @@ export default async function Landing() {
                     <div className="mrow">
                       <div>
                         <b>Redgum Homes (Aus)</b>
-                        <span>★ 4.8 · 63 reviews</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: ".25rem" }}>
+                          <MiniStar /> 4.8 · 63 reviews
+                        </span>
                       </div>
                       <span className="vbadge">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -105,7 +157,9 @@ export default async function Landing() {
                     <div className="mrow">
                       <div>
                         <b>Southpoint Projects</b>
-                        <span>★ 4.7 · 41 reviews</span>
+                        <span style={{ display: "flex", alignItems: "center", gap: ".25rem" }}>
+                          <MiniStar /> 4.7 · 41 reviews
+                        </span>
                       </div>
                       <span className="vbadge">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
@@ -115,8 +169,10 @@ export default async function Landing() {
                       </span>
                     </div>
                   </div>
-                  <div className="mcard" style={{ borderLeft: "4px solid var(--clear)" }}>
-                    <b>Deposit safety check ✓</b>
+                  <div className="mcard strip-ok">
+                    <b style={{ display: "flex", alignItems: "center", gap: ".3rem" }}>
+                      Deposit safety check <MiniCheck />
+                    </b>
                     <span>SAFE TO PROCEED · SOURCES ATTACHED</span>
                   </div>
                 </div>
@@ -132,7 +188,7 @@ export default async function Landing() {
                   <span className="p-tag">GET PAID</span>
                 </div>
                 <div className="p-body">
-                  <div className="mcard" style={{ borderLeft: "4px solid var(--risk)" }}>
+                  <div className="mcard strip-risk">
                     <b>Alert · a builder on your watchlist</b>
                     <span>COURT FILING · $42,300 EXPOSED · SOURCE →</span>
                   </div>
@@ -200,7 +256,7 @@ export default async function Landing() {
           </div>
           <div className="grid2">
             <div className="appcard cust rv">
-              <span className="ic" style={{ background: "var(--cloud)", color: "var(--navy)" }}>
+              <span className="ic navy">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 10.5L12 4l9 6.5" />
                   <path d="M5 10v10h14V10" />
@@ -221,7 +277,7 @@ export default async function Landing() {
               </a>
             </div>
             <div className="appcard pro rv d1">
-              <span className="ic" style={{ background: "var(--osoft)", color: "var(--orange)" }}>
+              <span className="ic pro">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M14.7 6.3a4.5 4.5 0 00-6.4 6.4L3 18v3h3l5.3-5.3a4.5 4.5 0 006.4-6.4L14 13l-3-3z" />
                 </svg>
@@ -253,7 +309,7 @@ export default async function Landing() {
           </div>
           <div className="grid3">
             <div className="card rv">
-              <span className="ic" style={{ background: "var(--rsoft)", color: "var(--risk)" }}>
+              <span className="ic risk">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
                   <path d="M13.7 21a2 2 0 01-3.4 0" />
@@ -264,12 +320,12 @@ export default async function Landing() {
                 Court filings, ASIC notices, licence changes — pushed to your phone with the source
                 attached.
               </p>
-              <a className="btn btn-g btn-s" href="/tradie" style={{ marginTop: "1rem" }}>
+              <a className="btn btn-g btn-s" href="/tradie" style={{ marginTop: "var(--s4)" }}>
                 See it in the Tradie app
               </a>
             </div>
             <div className="card rv d1">
-              <span className="ic" style={{ background: "var(--wsoft)", color: "var(--watch)" }}>
+              <span className="ic watch">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <rect x="3" y="7" width="18" height="13" rx="2" />
                   <path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2" />
@@ -280,12 +336,12 @@ export default async function Landing() {
                 Builders post work and see applicants&rsquo; verified credentials. Tradies see the
                 builder&rsquo;s pay-status before applying.
               </p>
-              <a className="btn btn-g btn-s" href="/builder" style={{ marginTop: "1rem" }}>
+              <a className="btn btn-g btn-s" href="/builder" style={{ marginTop: "var(--s4)" }}>
                 Post a job as a builder
               </a>
             </div>
             <div className="card rv d2">
-              <span className="ic" style={{ background: "var(--csoft)", color: "var(--clear)" }}>
+              <span className="ic ok">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z" />
                   <path d="M9 12l2 2 4-4" />
@@ -296,7 +352,7 @@ export default async function Landing() {
                 Verified profiles with portfolios, two-way reviews (yes — tradies rate builders
                 too), and badges that mean something.
               </p>
-              <a className="btn btn-g btn-s" href={profileHref} style={{ marginTop: "1rem" }}>
+              <a className="btn btn-g btn-s" href={profileHref} style={{ marginTop: "var(--s4)" }}>
                 View a builder profile
               </a>
             </div>
@@ -305,34 +361,34 @@ export default async function Landing() {
       </section>
 
       {/* PROOF */}
-      <section style={{ background: "var(--navy)", color: "#fff" }}>
+      <section className="sec-navy">
         <div className="wrap split">
           <div className="rv">
-            <span className="eyebrow" style={{ background: "rgba(255,90,31,.15)" }}>
+            <span className="eyebrow on-dark">
               Why now
             </span>
-            <h2 style={{ color: "#fff", marginTop: "1rem" }}>
+            <h2 style={{ marginTop: "var(--s4)" }}>
               Nearly 3,000 builders collapsed last year. The warnings were public.
             </h2>
-            <p className="sub" style={{ color: "#9DB0CC", marginTop: "1rem" }}>
+            <p className="sub" style={{ marginTop: "var(--s4)" }}>
               Court lists, ASIC notices, licence registers — the signals sit in plain sight,
               scattered where nobody looks. We fuse them per-ABN and put them on your phone.
             </p>
-            <ul className="checks" style={{ color: "#DDE7F3" }}>
+            <ul className="checks">
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#33C088" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
                 Every alert cites its public source — verify in one tap
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#33C088" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
                 Facts and opinion clearly separated; corrections within 48h
               </li>
               <li>
-                <svg viewBox="0 0 24 24" fill="none" stroke="#33C088" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
                   <path d="M20 6L9 17l-5-5" />
                 </svg>
                 No lead fees, no lock-ins, no expiring credits — ever
@@ -346,6 +402,28 @@ export default async function Landing() {
               <Art kind="house" label="Handover day · Officer" />
               <Art kind="tile" label="Wet-area tiling · Clyde Nth" />
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* REAL PROJECTS — R1 photo gallery band (slots landing-gallery-1..6) */}
+      <section>
+        <div className="wrap">
+          <div className="sec-head rv">
+            <span className="eyebrow">Real projects</span>
+            <h2>Built by the trades on BuildSafe</h2>
+            <p className="sub">
+              Frames, pours, wet areas, handovers — the everyday work the platform protects, on
+              both sides of the contract.
+            </p>
+          </div>
+          <div className="cat-grid">
+            <SitePhoto slot="landing-gallery-1" className="photo" caption="Frame stage · Werribee" />
+            <SitePhoto slot="landing-gallery-2" className="photo" caption="Tower cranes · Melbourne" />
+            <SitePhoto slot="landing-gallery-3" className="photo" caption="Slab pour · Clyde North" />
+            <SitePhoto slot="landing-gallery-4" className="photo" caption="Wet-area tiling · Officer" />
+            <SitePhoto slot="landing-gallery-5" className="photo" caption="Handover day · Tarneit" />
+            <SitePhoto slot="landing-gallery-6" className="photo" caption="Site crew · Cranbourne" />
           </div>
         </div>
       </section>
@@ -368,26 +446,17 @@ export default async function Landing() {
       {/* CTA */}
       <section>
         <div className="wrap">
-          <div
-            className="appcard rv"
-            style={{
-              textAlign: "center",
-              padding: "3.5rem 2rem",
-              background: "linear-gradient(160deg,#0F2440,#0A1B2E)",
-              color: "#fff",
-              border: "none",
-            }}
-          >
-            <h2 style={{ color: "#fff" }}>Pick your side. Same engine protects you.</h2>
-            <p className="sub" style={{ color: "#9DB0CC", maxWidth: "52ch", margin: "1rem auto 1.8rem" }}>
+          <div className="cta-band rv">
+            <h2>Pick your side. Same engine protects you.</h2>
+            <p className="sub">
               Create a profile in under two minutes — customer, tradie, or builder. Founding
               members lock launch pricing for life.
             </p>
-            <div style={{ display: "flex", gap: ".8rem", justifyContent: "center", flexWrap: "wrap" }}>
+            <div className="actions">
               <a className="btn btn-p btn-lg" href="/onboarding">
                 Create your profile →
               </a>
-              <a className="btn btn-g btn-lg" href="/customer" style={{ background: "#fff" }}>
+              <a className="btn btn-w btn-lg" href="/customer">
                 Just check a builder
               </a>
             </div>
