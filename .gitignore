@@ -9,3 +9,6 @@ ruvector.db
 .claude-flow/sessions/
 __pycache__/
 *.pyc
+
+# Ruflo runtime state under web/ (background worker writes)
+web/.claude-flow/
