@@ -441,19 +441,19 @@ input:disabled,select:disabled,textarea:disabled,input[readonly]{background:var(
 .drawer.open{transform:none}
 
 /* ---- §11.1 photo card (16:10 everywhere; next/image fill + Art SVG onError fallback) ---- */
-.photo{position:relative;aspect-ratio:16/10;border-radius:var(--r-4);overflow:hidden;
+.photo,.photo-card{position:relative;aspect-ratio:16/10;border-radius:var(--r-4);overflow:hidden;
   background:linear-gradient(135deg,#12304F,#0A1B2E)}   /* navy base shows while loading */
-.photo img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--t-3) var(--ease)}
-.photo::after{content:"";position:absolute;inset:0;z-index:1;
+.photo img,.photo-card img{width:100%;height:100%;object-fit:cover;display:block;transition:transform var(--t-3) var(--ease)}
+.photo::after,.photo-card::after{content:"";position:absolute;inset:0;z-index:1;
   background:linear-gradient(180deg,transparent 45%,rgba(10,21,36,.72))}  /* caption scrim — never put text on the top 45% */
-.photo .cap{position:absolute;left:.8rem;right:.8rem;bottom:.7rem;z-index:2;color:#fff}
-.photo .cap.micro{font:600 .6rem var(--fm);letter-spacing:.1em;text-transform:uppercase;
+.photo .cap,.photo-card .cap{position:absolute;left:.8rem;right:.8rem;bottom:.7rem;z-index:2;color:#fff}
+.photo .cap.micro,.photo-card .cap.micro{font:600 .6rem var(--fm);letter-spacing:.1em;text-transform:uppercase;
   width:max-content;padding:.3rem .55rem;border-radius:var(--r-1);
   background:var(--glass-bg-dark);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px)}
-.photo .cap.title{font:700 1.02rem var(--fd)}
+.photo .cap.title,.photo-card .cap.title{font:700 1.02rem var(--fd)}
 
 /* ---- §11.2 category tile = .photo + interactive contract (whole tile is one <a>) ---- */
-.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:var(--s4)} /* 2-up minimum at 375px, never 1 column */
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:var(--s4)} /* 2-up minimum at 375px, never 1 column */
 .cat-tile{display:block;cursor:pointer;transition:box-shadow var(--t-2)}
 .cat-tile:hover,.cat-tile:focus-visible{box-shadow:var(--sh2)}
 .cat-tile:hover img,.cat-tile:focus-visible img{transform:scale(1.04)}   /* zoom the img, not the tile — no layout shift */
@@ -546,3 +546,17 @@ input:disabled,select:disabled,textarea:disabled,input[readonly]{background:var(
 /* ---- §13 page transition (app/template.tsx wraps every route in .page-in) ---- */
 .page-in{animation:pagein var(--t-3) var(--ease)}
 @keyframes pagein{from{opacity:0;transform:translateY(8px)}}
+
+/* ---- R2 integration: shared rules requested by the page sweeps ---- */
+.item p{font-size:.84rem;color:var(--slate);margin-top:.35rem}
+.card .actions{margin-top:var(--s3)}
+.phead h3{font-size:1.3rem}
+.note .dismiss{margin-left:auto;flex:none;width:28px;height:28px;display:grid;place-items:center;
+  border-radius:var(--r-2);color:inherit;opacity:.7;transition:opacity var(--t-1),background var(--t-1)}
+.note .dismiss:hover{opacity:1;background:rgba(10,27,46,.06)}
+/* auth split (login 480px form col, onboarding overrides --form-col:680px) */
+.auth-split{display:grid;gap:var(--s6);align-items:stretch}
+@media(min-width:1024px){.auth-split{grid-template-columns:minmax(0,var(--form-col,480px)) 1fr}}
+.auth-side{display:none}
+@media(min-width:1024px){.auth-side{display:block}
+  .auth-side .photo,.auth-side .photo-card{height:100%;aspect-ratio:auto;border-radius:var(--r-7);box-shadow:var(--sh3)}}
