@@ -560,3 +560,12 @@ input:disabled,select:disabled,textarea:disabled,input[readonly]{background:var(
 .auth-side{display:none}
 @media(min-width:1024px){.auth-side{display:block}
   .auth-side .photo,.auth-side .photo-card{height:100%;aspect-ratio:auto;border-radius:var(--r-7);box-shadow:var(--sh3)}}
+
+/* ---- R2 integration round 2: profile/directory rules from sweep E ---- */
+.cover{display:grid}
+.cover .photo,.cover .photo-card{aspect-ratio:auto!important;width:100%;border-radius:0}
+.bcard .photo,.bcard .photo-card{aspect-ratio:16/8;border-radius:0}
+.pwrap h3{margin:1.8rem 0 .8rem}
+.pwrap .f-legal{margin-top:var(--s7)}
+.card details summary{font-weight:600;cursor:pointer}
+.card details ul{margin:.6rem 0 0 1.1rem;color:var(--slate);font-size:.9rem}

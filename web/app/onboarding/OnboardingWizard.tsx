@@ -145,6 +145,10 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
   /* -------- persistence: restore on mount… -------- */
   const hydrated = useRef(false);
   useEffect(() => {
+    // localStorage can't feed useState initializers here: it would render
+    // differently from the SSR HTML and break hydration. Restoring after
+    // mount is the sanctioned external-store sync; one batched pass.
+    /* eslint-disable react-hooks/set-state-in-effect */
     try {
       const raw = window.localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -178,6 +182,7 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
     } catch {
       /* corrupt JSON or storage blocked — start fresh */
     }
+    /* eslint-enable react-hooks/set-state-in-effect */
     hydrated.current = true;
     // mount-only: initialRole is fixed for the page load
     // eslint-disable-next-line react-hooks/exhaustive-deps
