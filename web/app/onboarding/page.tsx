@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import OnboardingWizard from "./OnboardingWizard";
+import SitePhoto from "@/components/SitePhoto";
 
 export const metadata: Metadata = {
   title: "Create your profile — BuildSafe",
@@ -20,5 +21,17 @@ export default async function OnboardingPage({
   const initialRole = ROLES.includes(sp.role as WizardRole)
     ? (sp.role as WizardRole)
     : undefined;
-  return <OnboardingWizard initialRole={initialRole} />;
+  // SitePhoto is server-only (reads the photo manifest) — render all three
+  // role panels here; the client wizard shows the one matching the picked role.
+  // SVG art falls back until the photo pipeline has run.
+  return (
+    <OnboardingWizard
+      initialRole={initialRole}
+      sideArt={{
+        customer: <SitePhoto slot="onboarding-side-customer" className="photo" />,
+        tradie: <SitePhoto slot="onboarding-side-tradie" className="photo" />,
+        builder: <SitePhoto slot="onboarding-side-builder" className="photo" />,
+      }}
+    />
+  );
 }
