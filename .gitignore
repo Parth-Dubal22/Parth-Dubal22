@@ -7,3 +7,5 @@ ruvector.db
 .claude-flow/data/
 .claude-flow/logs/
 .claude-flow/sessions/
+__pycache__/
+*.pyc
