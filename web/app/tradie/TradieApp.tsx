@@ -1,10 +1,13 @@
 "use client";
 /** Tradie app shell — ported 1:1 from site/app-tradie.html (sbtn/panel tabs, mobile
- *  burger, prototype markup + copy). All mutations go through the API routes. */
-import { useMemo, useState } from "react";
+ *  burger, prototype markup + copy). All mutations go through the API routes.
+ *  R2 sweep: token-scale spacing, per-action busy states, SVG icons (no glyphs),
+ *  <EmptyState> zero-states, error toasts, mobile drawer scrim/Escape/focus-return. */
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Art from "@/components/Art";
+import EmptyState from "@/components/EmptyState";
 import Stars from "@/components/Stars";
 import { toast } from "@/components/Toast";
 import { ALL_TRADES, ST, centsToMoney, fmtDate, initials, timeAgo } from "@/lib/format";
@@ -12,9 +15,11 @@ import type {
   PortfolioItem, TradieAlert, TradieJob, TradieProfileData, TradieReview, TradieWatchItem,
 } from "./types";
 
-/* prototype avatar colours keyed by risk status (neutral navy when gated) */
-const RISK_COL: Record<string, string> = { risk: "#E5484D", watch: "#E9950C", ok: "#149E5F" };
-const NEUTRAL_COL = "#2E5E8F";
+/* avatar colours keyed by risk status via tokens (neutral --av-1 when gated) */
+const RISK_COL: Record<string, string> = {
+  risk: "var(--risk)", watch: "var(--watch)", ok: "var(--clear)",
+};
+const NEUTRAL_COL = "var(--av-1)";
 const alertCls = (lv: string | null) => (lv === "risk" ? "" : lv === "watch" ? " w" : " c");
 
 async function api(path: string, method: string, body?: unknown) {
@@ -30,18 +35,97 @@ async function api(path: string, method: string, body?: unknown) {
 
 const msg = (e: unknown) => (e instanceof Error ? e.message : "Something went wrong");
 
+/* ------- small inline icons (24-grid stroke SVGs — no text glyphs) ------- */
+function PlusIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+function CheckIcon({ size = 12, stroke }: { size?: number; stroke?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" stroke={stroke ?? "currentColor"} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 6L9 17l-5-5" />
+    </svg>
+  );
+}
+function StarIcon({ size = 14 }: { size?: number }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="var(--star)" aria-hidden="true" style={{ verticalAlign: "-.08em" }}>
+      <path d="M12 2.5l2.94 5.96 6.58.96-4.76 4.64 1.12 6.55L12 17.52l-5.88 3.09 1.12-6.55L2.48 9.42l6.58-.96z" />
+    </svg>
+  );
+}
+
+/* ------- 72px line-art empty-state illustrations (MASTER §9 contexts) ------- */
+function ArtWatchEmpty() {
+  return (
+    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <circle cx="23" cy="46" r="11" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="49" cy="46" r="11" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M34 43h4M19 36l4-16h5M53 36l-4-16h-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="23" cy="46" r="4" fill="var(--osoft)" stroke="var(--orange)" strokeWidth="2.5" />
+    </svg>
+  );
+}
+function ArtBellEmpty() {
+  return (
+    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <path d="M50 43a14 14 0 10-28 0c0 9-4.5 12-4.5 12h37S50 52 50 43z" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M41 60a5 5 0 01-10 0" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <circle cx="51" cy="19" r="6" fill="var(--osoft)" stroke="var(--orange)" strokeWidth="2.5" />
+    </svg>
+  );
+}
+function ArtDollarEmpty() {
+  return (
+    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <circle cx="36" cy="36" r="25" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M36 21v30M43 27.5c-1.3-2.1-3.9-3-7-3-3.9 0-6.6 1.9-6.6 5 0 6.8 13.9 3.3 13.9 10 0 3.3-3 5.3-7.5 5.3-3.6 0-6.3-1.3-7.5-3.5" stroke="var(--orange)" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ArtHatEmpty() {
+  return (
+    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <path d="M14 47a22 22 0 0144 0" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      <path d="M9 47h54v6H9z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M30 28v-9h12v9" stroke="var(--orange)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function ArtStarsEmpty() {
+  return (
+    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <path d="M32 14l5.5 11.2 12.4 1.8-9 8.7 2.1 12.3L32 42.2 21 48l2.1-12.3-9-8.7 12.4-1.8z" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+      <path d="M54 42l2.6 5.3 5.9.9-4.3 4.1 1 5.9L54 55.4 48.8 58.2l1-5.9-4.3-4.1 5.9-.9z" fill="var(--osoft)" stroke="var(--orange)" strokeWidth="2.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function ArtCameraEmpty() {
+  return (
+    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+      <rect x="10" y="23" width="52" height="35" rx="6" stroke="currentColor" strokeWidth="2.5" />
+      <path d="M26 23l4-7h12l4 7" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" />
+      <circle cx="36" cy="40" r="10" stroke="currentColor" strokeWidth="2.5" />
+      <circle cx="36" cy="40" r="4" fill="var(--osoft)" stroke="var(--orange)" strokeWidth="2.5" />
+    </svg>
+  );
+}
+
 /* ------- upgrade prompt (risk detail is for subscribers — facts stay hidden) ------- */
 function UpgradePrompt({ what }: { what: string }) {
   return (
-    <div className="card rv" style={{ maxWidth: 620 }}>
+    <div className="card" style={{ maxWidth: 620 }}>
       <span className="pill navy">TRADIE WATCH · SUBSCRIBERS</span>
-      <h3 style={{ margin: ".8rem 0 .2rem" }}>{what} is part of Tradie Watch</h3>
+      <h3 style={{ margin: "var(--s3) 0 var(--s1)" }}>{what} is part of Tradie Watch</h3>
       <p>
         BuildSafe monitors public records and flags signals — every one citing its source.
         Signal history, builder risk status and your $ exposure tracker are private to
         subscribers. $29/mo · no lock-in contracts · cancel anytime.
       </p>
-      <Link className="btn btn-p" href="/pricing" style={{ marginTop: "1rem" }}>
+      <Link className="btn btn-p" href="/pricing" style={{ marginTop: "var(--s4)" }}>
         Upgrade — cancel anytime
       </Link>
     </div>
@@ -49,7 +133,9 @@ function UpgradePrompt({ what }: { what: string }) {
 }
 
 /* ------- add-to-watchlist form (prototype #add-watch) ------- */
-function AddWatchForm({ onDone }: { onDone: () => void }) {
+function AddWatchForm({
+  onDone, inputRef,
+}: { onDone: () => void; inputRef?: React.Ref<HTMLInputElement> }) {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState(false);
   async function submit(e: React.FormEvent) {
@@ -68,22 +154,29 @@ function AddWatchForm({ onDone }: { onDone: () => void }) {
       toast(query + " added — monitoring is on");
       onDone();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setBusy(false);
     }
   }
   return (
-    <form onSubmit={submit} style={{ display: "flex", gap: ".5rem" }}>
+    <form onSubmit={submit} className="actions">
       <input
+        ref={inputRef}
         type="text"
+        className="w-m"
         value={q}
         onChange={(e) => setQ(e.target.value)}
         placeholder="Add builder by name/ABN…"
         aria-label="Add builder by name or ABN"
-        style={{ maxWidth: 230 }}
       />
-      <button className="btn btn-d btn-s" type="submit" disabled={busy}>＋ Watch</button>
+      <button
+        className={"btn btn-d btn-s" + (busy ? " busy" : "")}
+        type="submit" disabled={busy} aria-busy={busy || undefined}
+      >
+        <PlusIcon />
+        Watch
+      </button>
     </form>
   );
 }
@@ -97,14 +190,17 @@ function ReportDelay({ companyId, companyName }: { companyId: number; companyNam
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     const days = parseInt(daysLate, 10);
-    if (!Number.isFinite(days) || days < 1) { toast("Enter how many days late the payment is"); return; }
+    if (!Number.isFinite(days) || days < 1) {
+      toast("Enter how many days late the payment is", { kind: "error" });
+      return;
+    }
     setBusy(true);
     try {
       await api("/api/payment-reports", "POST", { companyId, daysLate: days, hasInvoiceEvidence: evidence });
       toast("Report logged — only ever shown aggregated & anonymised");
       setOpen(false); setDaysLate(""); setEvidence(false);
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -116,7 +212,7 @@ function ReportDelay({ companyId, companyName }: { companyId: number; companyNam
           Report a payment delay
         </button>
       ) : (
-        <form className="form" onSubmit={submit} style={{ marginTop: ".4rem", gap: ".7rem" }}>
+        <form className="form" onSubmit={submit} style={{ marginTop: "var(--s2)" }}>
           <div className="f2">
             <label>
               Days late
@@ -126,11 +222,10 @@ function ReportDelay({ companyId, companyName }: { companyId: number; companyNam
                 aria-label={`Days late on payment from ${companyName}`}
               />
             </label>
-            <label style={{ alignSelf: "end", display: "flex", alignItems: "center", gap: ".5rem" }}>
+            <label className="check-row" style={{ alignSelf: "end" }}>
               <input
                 type="checkbox" checked={evidence}
                 onChange={(e) => setEvidence(e.target.checked)}
-                style={{ width: "auto" }}
               />
               I can provide the unpaid invoice as evidence
             </label>
@@ -139,8 +234,13 @@ function ReportDelay({ companyId, companyName }: { companyId: number; companyNam
             Your report is only ever displayed aggregated &amp; anonymised — e.g. “3 verified
             reports of 60+ day delays” — never published verbatim, never attributed to you.
           </span>
-          <div style={{ display: "flex", gap: ".5rem" }}>
-            <button className="btn btn-p btn-s" type="submit" disabled={busy}>Submit report</button>
+          <div className="actions">
+            <button
+              className={"btn btn-p btn-s" + (busy ? " busy" : "")}
+              type="submit" disabled={busy} aria-busy={busy || undefined}
+            >
+              Submit report
+            </button>
             <button className="btn btn-g btn-s" type="button" onClick={() => setOpen(false)}>Cancel</button>
           </div>
         </form>
@@ -163,7 +263,7 @@ function WatchCard({
       toast(w.name + " removed from your watchlist");
       onRemoved();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -205,14 +305,18 @@ function WatchCard({
       <div style={{ textAlign: "right" }}>
         {st ? <span className={`pill ${st[1]}`}>{st[0]}</span> : null}
         {seeRisk ? (
-          <div className="mono" style={{ fontSize: ".66rem", color: "var(--slate2)", marginTop: ".35rem" }}>
+          <div className="micro" style={{ marginTop: "var(--s1)" }}>
             {w.exposureCents ? centsToMoney(w.exposureCents) + " exposed" : "no $ logged"}
           </div>
         ) : null}
       </div>
       <Link className="btn btn-g btn-s" href={`/b/${w.slug}`}>Profile</Link>
       {history ? (
-        <button className="btn btn-g btn-s" onClick={remove} disabled={busy} aria-label={`Remove ${w.name} from watchlist`}>
+        <button
+          className={"btn btn-g btn-s" + (busy ? " busy" : "")}
+          onClick={remove} disabled={busy} aria-busy={busy || undefined}
+          aria-label={`Remove ${w.name} from watchlist`}
+        >
           Remove
         </button>
       ) : null}
@@ -234,13 +338,13 @@ function JobCard({ j, onApplied }: { j: TradieJob; onApplied: () => void }) {
       toast("Application sent — the builder can see your verified profile");
       onApplied();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setBusy(false);
     }
   }
   return (
-    <div className="jobcard rv">
+    <div className="jobcard">
       <div className="top">
         <div>
           <h4>{j.title}</h4>
@@ -252,18 +356,26 @@ function JobCard({ j, onApplied }: { j: TradieJob; onApplied: () => void }) {
         <span className="rate">{j.rate}</span>
       </div>
       <div className="paycheck">
-        <span style={{ display: "flex", alignItems: "center", gap: ".5rem", fontSize: ".84rem" }}>
+        <span className="who">
           {st ? (
             <span className={`pill ${st[1]}`}>Builder: {st[0]}</span>
           ) : (
             <Link className="pill navy" href="/pricing">Pay-status: upgrade to see</Link>
           )}{" "}
-          <b style={{ fontSize: ".84rem" }}>{j.builderName}</b>
+          <b>{j.builderName}</b>
         </span>
         {j.applied ? (
-          <span className="pill ok">Applied ✓</span>
+          <span className="pill ok">
+            Applied
+            <CheckIcon />
+          </span>
         ) : (
-          <button className="btn btn-p btn-s" onClick={apply} disabled={busy}>Apply now</button>
+          <button
+            className={"btn btn-p btn-s" + (busy ? " busy" : "")}
+            onClick={apply} disabled={busy} aria-busy={busy || undefined}
+          >
+            Apply now
+          </button>
         )}
       </div>
     </div>
@@ -287,7 +399,7 @@ function ExposureRow({ w, onSaved }: { w: TradieWatchItem; onSaved: () => void }
       toast("Exposure updated for " + w.name);
       onSaved();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -301,14 +413,19 @@ function ExposureRow({ w, onSaved }: { w: TradieWatchItem; onSaved: () => void }
         <b>{w.name}</b>
         <span className="sub2">ABN {w.abn}</span>
       </div>
-      <span className="mono" style={{ fontSize: ".66rem", color: "var(--slate2)" }}>OWED ($)</span>
+      <span className="micro">OWED ($)</span>
       <input
         type="number" min={0} step={1} value={val}
+        className="w-s"
         onChange={(e) => setVal(e.target.value)}
         aria-label={`Amount owed to you by ${w.name}, in dollars`}
-        style={{ maxWidth: 140 }}
       />
-      <button className="btn btn-d btn-s" type="submit" disabled={busy}>Save</button>
+      <button
+        className={"btn btn-d btn-s" + (busy ? " busy" : "")}
+        type="submit" disabled={busy} aria-busy={busy || undefined}
+      >
+        Save
+      </button>
     </form>
   );
 }
@@ -322,7 +439,7 @@ function AlertCard({ a, onRead }: { a: TradieAlert; onRead: () => void }) {
       await api("/api/alerts/read", "POST", { alertId: a.id });
       onRead();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setBusy(false);
     }
@@ -332,7 +449,7 @@ function AlertCard({ a, onRead }: { a: TradieAlert; onRead: () => void }) {
       <div className="grow">
         <b>{a.title} — {a.companyName}</b>
         {a.detail ? (
-          <p style={{ fontSize: ".86rem", color: "var(--slate)", marginTop: ".2rem" }}>{a.detail}</p>
+          <p style={{ fontSize: ".86rem", color: "var(--slate)", marginTop: "var(--s1)" }}>{a.detail}</p>
         ) : null}
         <div className="srcline">
           Source:{" "}
@@ -344,13 +461,17 @@ function AlertCard({ a, onRead }: { a: TradieAlert; onRead: () => void }) {
           · {fmtDate(a.occurredOn)}
         </div>
       </div>
-      <span className="mono" style={{ fontSize: ".62rem", color: "var(--slate2)" }} suppressHydrationWarning>
+      <span className="micro" suppressHydrationWarning>
         {timeAgo(a.createdAt)}
       </span>
       {a.read ? (
         <span className="pill navy">READ</span>
       ) : (
-        <button className="btn btn-g btn-s" onClick={markRead} disabled={busy} aria-label={`Mark alert about ${a.companyName} as read`}>
+        <button
+          className={"btn btn-g btn-s" + (busy ? " busy" : "")}
+          onClick={markRead} disabled={busy} aria-busy={busy || undefined}
+          aria-label={`Mark alert about ${a.companyName} as read`}
+        >
           Mark read
         </button>
       )}
@@ -363,10 +484,10 @@ function ReviewCard({ r }: { r: TradieReview }) {
   return (
     <div className="review">
       <div className="rt">
-        <span className="avatar" style={{ background: "#2E5E8F" }}>{initials(r.author)}</span>
+        <span className="avatar" style={{ background: "var(--av-1)" }}>{initials(r.author)}</span>
         <div>
-          <b style={{ fontSize: ".88rem" }}>{r.author}</b>{" "}
-          <span className="pill navy" style={{ marginLeft: ".3rem" }}>{r.role}</span>
+          <b>{r.author}</b>{" "}
+          <span className="pill navy">{r.role}</span>
         </div>
         <span style={{ marginLeft: "auto" }}><Stars rating={r.rating} /></span>
       </div>
@@ -443,6 +564,10 @@ export default function TradieApp({
   const [availBusy, setAvailBusy] = useState(false);
   const [jobFilter, setJobFilter] = useState<"all" | "day" | "sub">("all");
 
+  const burgerRef = useRef<HTMLButtonElement | null>(null);
+  const dashAddRef = useRef<HTMLInputElement | null>(null);
+  const watchAddRef = useRef<HTMLInputElement | null>(null);
+
   // Saved profile state drives the header/sidebar (updates after a successful save).
   const [saved, setSaved] = useState(profile);
   const [eNm, setENm] = useState(profile.name);
@@ -453,6 +578,7 @@ export default function TradieApp({
   const [eInsExp, setEInsExp] = useState(profile.insuranceExpiry);
   const [portfolio, setPortfolio] = useState<PortfolioItem[]>(profile.portfolio);
   const [profBusy, setProfBusy] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   const first = saved.name.split(/\s+/)[0] || saved.name;
   const tradeLine = saved.trades.join(" & ");
@@ -472,9 +598,32 @@ export default function TradieApp({
 
   function pick(id: string) {
     setTab(id);
-    setSideOpen(false);
+    closeSide();
     window.scrollTo({ top: 0 });
   }
+
+  function closeSide() {
+    setSideOpen(false);
+  }
+
+  // Mobile drawer contract (MASTER §7): Escape closes + focus returns to the
+  // burger; body scroll locks while open; a scrim sits under the drawer.
+  useEffect(() => {
+    if (!sideOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSideOpen(false);
+        burgerRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [sideOpen]);
 
   async function toggleAvail() {
     if (availBusy) return;
@@ -487,7 +636,7 @@ export default function TradieApp({
       refresh();
     } catch (err) {
       setAvail(!next);
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setAvailBusy(false);
     }
@@ -513,22 +662,27 @@ export default function TradieApp({
       toast("Profile saved — builders now see the update");
       refresh();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setProfBusy(false);
     }
   }
 
   async function addPhoto() {
-    const next = [...portfolio, { art: "tile", caption: "New upload" }];
+    if (photoBusy) return;
+    const prev = portfolio;
+    const next = [...prev, { art: "tile", caption: "New upload" }];
+    setPhotoBusy(true);
     setPortfolio(next);
     try {
       await api("/api/profile", "PUT", { portfolio: next });
       toast("Photo added to portfolio");
       refresh();
     } catch (err) {
-      setPortfolio(portfolio);
-      toast(msg(err));
+      setPortfolio(prev);
+      toast(msg(err), { kind: "error" });
+    } finally {
+      setPhotoBusy(false);
     }
   }
 
@@ -539,18 +693,29 @@ export default function TradieApp({
     <>
       <div className="appbar">
         <button
-          className="burger" style={{ display: "flex" }} aria-label="Menu"
+          ref={burgerRef}
+          className="burger" aria-label="Menu"
           aria-expanded={sideOpen} onClick={() => setSideOpen(!sideOpen)}
         >
-          <span style={{ background: "#fff" }}></span>
-          <span style={{ background: "#fff" }}></span>
-          <span style={{ background: "#fff" }}></span>
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
-        <b style={{ fontFamily: "var(--fd)" }}>BuildSafe · Tradie</b>
-        <Link href="/" className="mono" style={{ fontSize: ".62rem", color: "#9DB0CC" }}>EXIT</Link>
+        <b>BuildSafe · Tradie</b>
+        <Link href="/" className="exit">EXIT</Link>
       </div>
 
       <div className="app">
+        {sideOpen ? (
+          <button
+            className="side-scrim"
+            aria-label="Close menu"
+            onClick={() => {
+              closeSide();
+              burgerRef.current?.focus();
+            }}
+          />
+        ) : null}
         <aside className={"side" + (sideOpen ? " open" : "")}>
           <Link className="logo" href="/">
             <span className="logo-mark">
@@ -585,8 +750,8 @@ export default function TradieApp({
           {/* DASHBOARD */}
           <div className={"panel" + (tab === "t-dash" ? " on" : "")} id="t-dash">
             <div className="topbar">
-              <h2>G&apos;day {first} 👋</h2>
-              <button className="tog" onClick={toggleAvail} aria-pressed={avail}>
+              <h2>G&apos;day {first}</h2>
+              <button className="tog" onClick={toggleAvail} aria-pressed={avail} disabled={availBusy} aria-busy={availBusy || undefined}>
                 <span>{avail ? "Available now — visible to builders" : "Available for day work"}</span>
                 <span className="knob"></span>
               </button>
@@ -603,42 +768,54 @@ export default function TradieApp({
               </div>
               <div className="kpi">
                 <small>Profile rating</small>
-                <b className="ok">{rating != null ? `${rating.toFixed(1)} ★` : "—"}</b>
+                <b className="ok">{rating != null ? <>{rating.toFixed(1)} <StarIcon /></> : "—"}</b>
               </div>
             </div>
-            <div className="topbar" style={{ marginTop: ".4rem" }}>
+            <div className="topbar" style={{ marginTop: "var(--s1)" }}>
               <h3>Your watchlist</h3>
-              <AddWatchForm onDone={refresh} />
+              <AddWatchForm onDone={refresh} inputRef={dashAddRef} />
             </div>
             <div className="list">
               {watch.map((w) => (
                 <WatchCard key={w.companyId} w={w} seeRisk={seeRisk} history={false} onRemoved={refresh} />
               ))}
               {watch.length === 0 ? (
-                <div className="item"><div className="grow">
-                  <b>No builders watched yet</b>
-                  <span className="sub2">Add the builders you work under — monitoring runs continuously.</span>
-                </div></div>
+                <EmptyState
+                  icon={<ArtWatchEmpty />}
+                  headline="No builders watched yet"
+                  body="Add the builders you work under — monitoring runs continuously."
+                  cta={
+                    <button className="btn btn-p" onClick={() => dashAddRef.current?.focus()}>
+                      Add a builder
+                    </button>
+                  }
+                />
               ) : null}
             </div>
             {seeRisk ? (
               <>
-                <div className="topbar" style={{ marginTop: "1.6rem" }}>
+                <div className="topbar" style={{ marginTop: "var(--stack-gap)" }}>
                   <h3>Latest alerts</h3>
                   <span className="hint">Every alert cites a public source</span>
                 </div>
                 <div className="list">
                   {alerts.slice(0, 3).map((a) => <AlertCard key={a.id} a={a} onRead={refresh} />)}
                   {alerts.length === 0 ? (
-                    <div className="item"><div className="grow">
-                      <b>No alerts yet</b>
-                      <span className="sub2">We&apos;ll flag new signals on your watched builders here.</span>
-                    </div></div>
+                    <EmptyState
+                      icon={<ArtBellEmpty />}
+                      headline="No alerts yet"
+                      body="We'll flag new signals on your watched builders here."
+                      cta={
+                        <button className="btn btn-g" onClick={() => pick("t-watch")}>
+                          Watch a builder
+                        </button>
+                      }
+                    />
                   ) : null}
                 </div>
               </>
             ) : (
-              <div style={{ marginTop: "1.6rem" }}>
+              <div style={{ marginTop: "var(--stack-gap)" }}>
                 <UpgradePrompt what="The alert feed" />
               </div>
             )}
@@ -648,10 +825,10 @@ export default function TradieApp({
           <div className={"panel" + (tab === "t-watch" ? " on" : "")} id="t-watch">
             <div className="topbar">
               <h2>Watchlist</h2>
-              <AddWatchForm onDone={refresh} />
+              <AddWatchForm onDone={refresh} inputRef={watchAddRef} />
             </div>
             {!seeRisk ? (
-              <div style={{ marginBottom: "1.3rem" }}>
+              <div style={{ marginBottom: "var(--s5)" }}>
                 <UpgradePrompt what="Signal history" />
               </div>
             ) : null}
@@ -660,10 +837,16 @@ export default function TradieApp({
                 <WatchCard key={w.companyId} w={w} seeRisk={seeRisk} history={true} onRemoved={refresh} />
               ))}
               {watch.length === 0 ? (
-                <div className="item"><div className="grow">
-                  <b>No builders watched yet</b>
-                  <span className="sub2">Add a builder by name or ABN to start continuous monitoring.</span>
-                </div></div>
+                <EmptyState
+                  icon={<ArtWatchEmpty />}
+                  headline="No builders watched yet"
+                  body="Add a builder by name or ABN to start continuous monitoring."
+                  cta={
+                    <button className="btn btn-p" onClick={() => watchAddRef.current?.focus()}>
+                      Add a builder
+                    </button>
+                  }
+                />
               ) : null}
             </div>
           </div>
@@ -683,10 +866,16 @@ export default function TradieApp({
                 <div className="list">
                   {watch.map((w) => <ExposureRow key={w.companyId} w={w} onSaved={refresh} />)}
                   {watch.length === 0 ? (
-                    <div className="item"><div className="grow">
-                      <b>Nothing to track yet</b>
-                      <span className="sub2">Watch a builder first, then log the invoices and retention they hold.</span>
-                    </div></div>
+                    <EmptyState
+                      icon={<ArtDollarEmpty />}
+                      headline="Nothing to track yet"
+                      body="Watch a builder first, then log the invoices and retention they hold."
+                      cta={
+                        <button className="btn btn-p" onClick={() => pick("t-watch")}>
+                          Watch a builder
+                        </button>
+                      }
+                    />
                   ) : null}
                 </div>
               </>
@@ -705,10 +894,16 @@ export default function TradieApp({
               <div className="list">
                 {alerts.map((a) => <AlertCard key={a.id} a={a} onRead={refresh} />)}
                 {alerts.length === 0 ? (
-                  <div className="item"><div className="grow">
-                    <b>No alerts yet</b>
-                    <span className="sub2">We&apos;ll flag new signals on your watched builders here.</span>
-                  </div></div>
+                  <EmptyState
+                    icon={<ArtBellEmpty />}
+                    headline="No alerts yet"
+                    body="We'll flag new signals on your watched builders here."
+                    cta={
+                      <button className="btn btn-p" onClick={() => pick("t-watch")}>
+                        Watch a builder
+                      </button>
+                    }
+                  />
                 ) : null}
               </div>
             ) : (
@@ -740,10 +935,18 @@ export default function TradieApp({
             <div className="grid2">
               {filteredJobs.map((j) => <JobCard key={j.id} j={j} onApplied={refresh} />)}
               {filteredJobs.length === 0 ? (
-                <div className="item"><div className="grow">
-                  <b>No open jobs match</b>
-                  <span className="sub2">Try another filter — new packages and day hire land here first.</span>
-                </div></div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <EmptyState
+                    icon={<ArtHatEmpty />}
+                    headline="No open jobs match"
+                    body="Try another filter — new packages and day hire land here first."
+                    cta={
+                      <button className="btn btn-g" onClick={() => setJobFilter("all")}>
+                        Show all jobs
+                      </button>
+                    }
+                  />
+                </div>
               ) : null}
             </div>
           </div>
@@ -758,15 +961,27 @@ export default function TradieApp({
               <span className="avatar av-lg" style={{ background: "var(--orange)" }}>{initials(saved.name)}</span>
               <div className="grow">
                 <h3 style={{ fontSize: "1.3rem" }}>{saved.name}</h3>
-                <div className="mono" style={{ fontSize: ".66rem", color: "var(--slate2)" }}>
+                <div className="micro">
                   {[tradeLine, [saved.suburb, saved.state].filter(Boolean).join(" "), saved.abn ? `ABN ${saved.abn}` : ""]
                     .filter(Boolean).join(" · ").toUpperCase()}
                 </div>
                 <div className="pstats">
-                  <div><b>{rating != null ? `${rating.toFixed(1)} ★` : "—"}</b><span>rating</span></div>
+                  <div><b>{rating != null ? <>{rating.toFixed(1)} <StarIcon /></> : "—"}</b><span>rating</span></div>
                   <div><b>{saved.jobsCompleted}</b><span>jobs via BuildSafe</span></div>
                   <div><b>{saved.reliabilityScore != null ? `${saved.reliabilityScore}%` : "—"}</b><span>reliability score</span></div>
-                  <div><b>{insCurrent ? "✓" : "—"}</b><span>insurance current</span></div>
+                  <div>
+                    <b>
+                      {insCurrent ? (
+                        <>
+                          <CheckIcon size={16} stroke="var(--clear)" />
+                          <span className="vh">Yes</span>
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </b>
+                    <span>insurance current</span>
+                  </div>
                 </div>
               </div>
               {saved.licenceVerified || saved.insuranceVerified ? (
@@ -779,8 +994,8 @@ export default function TradieApp({
               ) : null}
             </div>
 
-            <h3 style={{ margin: "1.6rem 0 .8rem" }}>Edit details</h3>
-            <form className="form card" onSubmit={saveProfile} style={{ padding: "1.5rem" }}>
+            <h3 style={{ margin: "var(--stack-gap) 0 var(--s3)" }}>Edit details</h3>
+            <form className="form card" onSubmit={saveProfile}>
               <div className="f2">
                 <label>
                   Display name
@@ -792,7 +1007,7 @@ export default function TradieApp({
                 </label>
               </div>
               <div>
-                <label style={{ marginBottom: ".4rem" }}>Trades</label>
+                <span className="field-legend">Trades</span>
                 <div className="filters" style={{ marginBottom: 0 }}>
                   {tradeChips.map((t) => (
                     <button
@@ -822,27 +1037,63 @@ export default function TradieApp({
                   <input type="date" value={eInsExp} onChange={(e) => setEInsExp(e.target.value)} />
                 </label>
               </div>
-              <button className="btn btn-p" style={{ justifySelf: "start" }} disabled={profBusy}>
-                Save profile
-              </button>
+              <div className="actions">
+                <button
+                  className={"btn btn-p" + (profBusy ? " busy" : "")}
+                  disabled={profBusy} aria-busy={profBusy || undefined}
+                >
+                  Save profile
+                </button>
+              </div>
             </form>
 
-            <h3 style={{ margin: "1.8rem 0 .8rem" }}>Portfolio</h3>
-            <div className="portfolio">
-              {portfolio.map((p, i) => <Art key={i} kind={p.art} label={p.caption} />)}
-            </div>
-            <button className="btn btn-g btn-s" style={{ marginTop: ".8rem" }} onClick={addPhoto}>
-              ＋ Add work photo
-            </button>
+            <h3 style={{ margin: "var(--stack-gap) 0 var(--s3)" }}>Portfolio</h3>
+            {portfolio.length > 0 ? (
+              <>
+                <div className="portfolio">
+                  {portfolio.map((p, i) => (
+                    <Art key={i} kind={p.art} label={p.caption} style={{ aspectRatio: "16/10" }} />
+                  ))}
+                </div>
+                <button
+                  className={"btn btn-g btn-s" + (photoBusy ? " busy" : "")}
+                  style={{ marginTop: "var(--s3)" }}
+                  onClick={addPhoto} disabled={photoBusy} aria-busy={photoBusy || undefined}
+                >
+                  <PlusIcon />
+                  Add work photo
+                </button>
+              </>
+            ) : (
+              <EmptyState
+                icon={<ArtCameraEmpty />}
+                headline="No work photos yet"
+                body="Show builders what you do — your portfolio backs up every application."
+                cta={
+                  <button
+                    className={"btn btn-p" + (photoBusy ? " busy" : "")}
+                    onClick={addPhoto} disabled={photoBusy} aria-busy={photoBusy || undefined}
+                  >
+                    Add work photo
+                  </button>
+                }
+              />
+            )}
 
-            <h3 style={{ margin: "1.8rem 0 .8rem" }}>Reviews from builders &amp; clients</h3>
+            <h3 style={{ margin: "var(--stack-gap) 0 var(--s3)" }}>Reviews from builders &amp; clients</h3>
             <div className="list">
               {reviews.map((r) => <ReviewCard key={r.id} r={r} />)}
               {reviews.length === 0 ? (
-                <div className="item"><div className="grow">
-                  <b>No reviews yet</b>
-                  <span className="sub2">Reviews land here after builders and clients you&apos;ve worked with rate you.</span>
-                </div></div>
+                <EmptyState
+                  icon={<ArtStarsEmpty />}
+                  headline="No reviews yet"
+                  body="Reviews land here after builders and clients you've worked with rate you."
+                  cta={
+                    <button className="btn btn-g" onClick={() => pick("t-jobs")}>
+                      Browse the job board
+                    </button>
+                  }
+                />
               ) : null}
             </div>
           </div>
