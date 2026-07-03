@@ -94,9 +94,21 @@ const SCENES: Record<string, React.ReactNode> = {
   ),
 };
 
-export default function Art({ kind, label }: { kind: string; label?: string }) {
+export default function Art({
+  kind,
+  label,
+  className,
+  style,
+}: {
+  kind: string;
+  label?: string;
+  /** Optional extras so wrappers (e.g. SitePhoto's fallback) can size/position
+   *  the scene without new CSS. Omitted everywhere else — fully backward compatible. */
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
-    <div className="art">
+    <div className={className ? `art ${className}` : "art"} style={style}>
       <svg viewBox="0 0 400 240" preserveAspectRatio="xMidYMid slice">
         {SCENES[kind] ?? SCENES.house}
       </svg>
