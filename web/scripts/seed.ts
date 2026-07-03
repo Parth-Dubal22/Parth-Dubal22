@@ -3,16 +3,27 @@
 import { hash } from "bcryptjs";
 import { db, tables } from "../lib/db";
 import { sql } from "drizzle-orm";
+import { categorySlugForTradeText, TRADE_TO_CATEGORY } from "../lib/data/categories";
+import { seedCategories } from "./seed-categories";
+
+/** trades text[] → taxonomy top-level slugs (R5) — dedup, drop unmappable. */
+const slugsForTrades = (trades: string[]): string[] =>
+  [...new Set(trades.map(categorySlugForTradeText).filter((s): s is string => !!s))];
 
 async function main() {
   console.log("Seeding BuildSafe demo data…");
-  // wipe (dev only)
+  // wipe (dev only) — categories are re-seeded from the taxonomy below
   await db.execute(sql`
     TRUNCATE users, companies, signals, watchlist_items, exposure_entries, alerts,
       subbie_panel_items, builder_checks, jobs, job_applications, reviews,
       payment_reports, verification_requests, disputes, subscriptions,
-      quote_requests, email_log, tradie_profiles, builder_profiles, customer_profiles
+      quote_requests, email_log, tradie_profiles, builder_profiles, customer_profiles,
+      company_categories, categories
     RESTART IDENTITY CASCADE`);
+
+  /* ---- category taxonomy (R5 EXTENDED: 1086 rows from categories.json) ---- */
+  const catCount = await seedCategories();
+  console.log(`  categories: ${catCount}`);
 
   const pw = await hash("demo1234", 10);
 
@@ -64,7 +75,8 @@ async function main() {
   /* ---- profiles ---- */
   await db.insert(tables.tradieProfiles).values({
     userId: tradie.id, businessName: "Parth C. Tiling", abn: "84220913557",
-    trades: ["Wall & Floor Tiling"], suburb: "Clyde North", state: "VIC",
+    trades: ["Wall & Floor Tiling"], categorySlugs: slugsForTrades(["Wall & Floor Tiling"]),
+    suburb: "Clyde North", state: "VIC",
     licenceNumber: null, insuranceProvider: "CoverTrade $10M",
     insuranceExpiry: new Date("2027-03-01"), insuranceVerified: true,
     availableNow: false, jobsCompleted: 37, reliabilityScore: 96,
@@ -75,12 +87,12 @@ async function main() {
     ],
   });
   await db.insert(tables.tradieProfiles).values([
-    { userId: extra.nguyen, businessName: "M. Nguyen Rendering", trades: ["Rendering"], suburb: "Tarneit", state: "VIC", insuranceProvider: "TradeSure", insuranceExpiry: new Date("2027-01-15"), insuranceVerified: true, availableNow: true, jobsCompleted: 24, reliabilityScore: 94 },
-    { userId: extra.procoat, businessName: "ProCoat Render Co", trades: ["Rendering"], suburb: "Werribee", state: "VIC", insuranceProvider: "BuildCover", insuranceExpiry: new Date("2026-11-30"), insuranceVerified: true, availableNow: true, jobsCompleted: 18, reliabilityScore: 91 },
-    { userId: extra.okafor, businessName: "J. Okafor Tiling", trades: ["Tiling"], suburb: "Cranbourne", state: "VIC", jobsCompleted: 41, reliabilityScore: 97 },
-    { userId: extra.ferraro, businessName: "L. Ferraro Carpentry", trades: ["Carpentry"], suburb: "Clyde", state: "VIC", jobsCompleted: 33, reliabilityScore: 95 },
-    { userId: extra.tomic, businessName: "A. Tomic Plumbing", trades: ["Plumbing"], suburb: "Berwick", state: "VIC", jobsCompleted: 27, reliabilityScore: 92 },
-    { userId: extra.silva, businessName: "R. Silva Concreting", trades: ["Concreting"], suburb: "Pakenham", state: "VIC", jobsCompleted: 29, reliabilityScore: 90 },
+    { userId: extra.nguyen, businessName: "M. Nguyen Rendering", trades: ["Rendering"], categorySlugs: slugsForTrades(["Rendering"]), suburb: "Tarneit", state: "VIC", insuranceProvider: "TradeSure", insuranceExpiry: new Date("2027-01-15"), insuranceVerified: true, availableNow: true, jobsCompleted: 24, reliabilityScore: 94 },
+    { userId: extra.procoat, businessName: "ProCoat Render Co", trades: ["Rendering"], categorySlugs: slugsForTrades(["Rendering"]), suburb: "Werribee", state: "VIC", insuranceProvider: "BuildCover", insuranceExpiry: new Date("2026-11-30"), insuranceVerified: true, availableNow: true, jobsCompleted: 18, reliabilityScore: 91 },
+    { userId: extra.okafor, businessName: "J. Okafor Tiling", trades: ["Tiling"], categorySlugs: slugsForTrades(["Tiling"]), suburb: "Cranbourne", state: "VIC", jobsCompleted: 41, reliabilityScore: 97 },
+    { userId: extra.ferraro, businessName: "L. Ferraro Carpentry", trades: ["Carpentry"], categorySlugs: slugsForTrades(["Carpentry"]), suburb: "Clyde", state: "VIC", jobsCompleted: 33, reliabilityScore: 95 },
+    { userId: extra.tomic, businessName: "A. Tomic Plumbing", trades: ["Plumbing"], categorySlugs: slugsForTrades(["Plumbing"]), suburb: "Berwick", state: "VIC", jobsCompleted: 27, reliabilityScore: 92 },
+    { userId: extra.silva, businessName: "R. Silva Concreting", trades: ["Concreting"], categorySlugs: slugsForTrades(["Concreting"]), suburb: "Pakenham", state: "VIC", jobsCompleted: 29, reliabilityScore: 90 },
   ]);
   await db.insert(tables.customerProfiles).values([
     { userId: customer.id, suburb: "Officer", state: "VIC", projectType: "Townhouse build" },
@@ -109,6 +121,24 @@ async function main() {
     companies[c.key] = row.id;
     await db.insert(tables.builderProfiles).values({ userId: builderUsers[c.key], companyId: row.id });
   }
+
+  /* ---- company ↔ category m2m (R5 EXTENDED) — building primary for every
+     builder, plus sensible secondaries from what they actually do ---- */
+  const companyCategoryRows: { key: string; slug: string; primary: boolean }[] = [
+    { key: "hc", slug: "building", primary: true },            // volume residential
+    { key: "bb", slug: "building", primary: true },            // custom homes
+    { key: "bb", slug: "carpenters", primary: false },
+    { key: "rh", slug: "building", primary: true },            // townhouses + renovations
+    { key: "rh", slug: "extensions-and-additions", primary: false },
+    { key: "rh", slug: "bathroom", primary: false },
+    { key: "sp", slug: "building", primary: true },            // multi-res + fit-out
+    { key: "sp", slug: "shopfitters", primary: false },
+  ];
+  await db.insert(tables.companyCategories).values(
+    companyCategoryRows.map((r) => ({
+      companyId: companies[r.key], categorySlug: r.slug, primary: r.primary,
+    })),
+  );
 
   /* ---- signals (facts + sources, approved by admin) ---- */
   const signalRows: { key: string; d: string; t: string; lv: "ok" | "watch" | "risk"; src: string; url?: string }[] = [
@@ -179,7 +209,9 @@ async function main() {
     const [row] = await db.insert(tables.jobs).values({
       builderUserId: builderUsers[j.by], companyId: companies[j.by], title: j.t,
       type: j.type, rate: j.rate, location: j.loc, startText: j.start,
-      duration: j.dur, requirement: j.req, trade: j.trade, status: "open",
+      duration: j.dur, requirement: j.req, trade: j.trade,
+      categorySlug: TRADE_TO_CATEGORY[j.trade] ?? null, // R5: taxonomy slug alongside legacy trade
+      status: "open",
     }).returning();
     jobIds.push(row.id);
   }

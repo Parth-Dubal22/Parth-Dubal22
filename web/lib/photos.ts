@@ -229,6 +229,131 @@ export const PHOTO_SLOTS = {
     sizes: SIZES_CAT_TILE,
   },
 
+  /* ---- popular-category tiles (R5 EXTENDED) — the 26 POPULAR taxonomy slots
+     that don't map onto an existing trade slot above. Same licensed-photo rules:
+     Unsplash/Pexels via scripts/fetch-photos.ts only — NEVER HiPages or Google
+     Images. Alt text hand-written; queries follow the SPEC R1 theme style. ---- */
+  "category-air-conditioning": {
+    query: "technician installing split system air conditioner wall",
+    pages: ["/find (popular grid)", "/find/air-conditioning (hero)", "/customer (category grid)"],
+    alt: "Air-conditioning technician fixing a split-system head unit to an interior wall",
+    fallbackArt: "house",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-arborist": {
+    query: "arborist climbing tree chainsaw harness pruning",
+    pages: ["/find (popular grid)", "/find/arborist (hero)", "/customer (category grid)"],
+    alt: "Arborist in a climbing harness pruning limbs high in a gum tree",
+    fallbackArt: "house",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-bathroom": {
+    query: "modern bathroom renovation tiles shower screen",
+    pages: ["/find (popular grid)", "/find/bathroom (hero)", "/customer (category grid)"],
+    alt: "Freshly renovated bathroom with floor-to-ceiling tiles and a frameless shower screen",
+    fallbackArt: "tile",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-cleaning": {
+    query: "professional cleaner mopping home floor gloves",
+    pages: ["/find (popular grid)", "/find/cleaning (hero)", "/customer (category grid)"],
+    alt: "Professional cleaner in gloves mopping a timber floor in a family home",
+    fallbackArt: "house",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-decking": {
+    query: "timber deck construction drill outdoor",
+    pages: ["/find (popular grid)", "/find/decking (hero)", "/customer (category grid)"],
+    alt: "Carpenter screwing down fresh timber decking boards on a backyard deck frame",
+    fallbackArt: "frame",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-doors": {
+    query: "carpenter installing timber door hinge",
+    pages: ["/find (popular grid)", "/find/doors (hero)", "/customer (category grid)"],
+    alt: "Tradesperson fitting hinges while hanging a new timber door in its frame",
+    fallbackArt: "house",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-fencing": {
+    query: "timber fence installation backyard posts",
+    pages: ["/find (popular grid)", "/find/fencing (hero)", "/customer (category grid)"],
+    alt: "Fencer nailing palings to a new timber boundary fence",
+    fallbackArt: "frame",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-handyman": {
+    query: "handyman tool belt drill home repair",
+    pages: ["/find (popular grid)", "/find/handyman (hero)", "/customer (category grid)"],
+    alt: "Handyman with a loaded tool belt drilling a wall fixing during a home repair",
+    fallbackArt: "frame",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-kitchen": {
+    query: "kitchen renovation cabinet installation benchtop",
+    pages: ["/find (popular grid)", "/find/kitchen (hero)", "/customer (category grid)"],
+    alt: "Cabinet maker levelling new cabinetry during a kitchen renovation",
+    fallbackArt: "tile",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-paving": {
+    query: "paver laying brick pavers path rubber mallet",
+    pages: ["/find (popular grid)", "/find/paving (hero)", "/customer (category grid)"],
+    alt: "Paver tapping brick pavers into a sand bed with a rubber mallet",
+    fallbackArt: "tile",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-pest-control": {
+    query: "pest control technician spraying skirting board",
+    pages: ["/find (popular grid)", "/find/pest-control (hero)", "/customer (category grid)"],
+    alt: "Pest-control technician treating skirting boards inside a home with a sprayer",
+    fallbackArt: "house",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-retaining-walls": {
+    query: "stone block retaining wall garden construction",
+    pages: ["/find (popular grid)", "/find/retaining-walls (hero)", "/customer (category grid)"],
+    alt: "Block retaining wall being built up in courses along a sloped garden bed",
+    fallbackArt: "frame",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-security": {
+    query: "technician installing security camera cctv wall",
+    pages: ["/find (popular grid)", "/find/security (hero)", "/customer (category grid)"],
+    alt: "Security installer mounting a CCTV camera to an exterior wall",
+    fallbackArt: "tower",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-waterproofing": {
+    query: "waterproofing membrane bathroom floor roller",
+    pages: ["/find (popular grid)", "/find/waterproofing (hero)", "/customer (category grid)"],
+    alt: "Waterproofer rolling blue membrane across a bathroom floor before tiling",
+    fallbackArt: "tile",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+  "category-windows": {
+    query: "tradesman installing window frame glass house",
+    pages: ["/find (popular grid)", "/find/windows (hero)", "/customer (category grid)"],
+    alt: "Installer seating a new window frame into a house opening",
+    fallbackArt: "house",
+    aspect: "16/10",
+    sizes: SIZES_CAT_TILE,
+  },
+
   /* ---- default profile covers (R4/R6) — rotated by company id ---- */
   "profile-cover-default-1": {
     query: "house construction sunset silhouette",
@@ -311,6 +436,72 @@ void _everyTradeHasACategorySlot;
 /** "Tiling" → "category-tiling" (typed); use for R5 tile grids. */
 export const categorySlotForTrade = (trade: (typeof ALL_TRADES)[number]): PhotoSlotId =>
   `category-${trade.toLowerCase() as Lowercase<typeof trade>}`;
+
+/* ---- R5 EXTENDED: taxonomy category slug → photo slot ----
+ * Every POPULAR slug (lib/data/categories.ts) has a slot: the 15 new
+ * category-* slots above plus the 11 that reuse an existing trade slot
+ * (tilers→category-tiling etc.). `bricklaying` is mapped too so job-card
+ * thumbnails work for the seeded bricklaying job even though it isn't in
+ * the popular grid. */
+export const CATEGORY_PHOTO_SLOT: Record<string, PhotoSlotId> = {
+  "air-conditioning": "category-air-conditioning",
+  arborist: "category-arborist",
+  bathroom: "category-bathroom",
+  building: "category-builders",
+  bricklaying: "category-bricklaying",
+  carpenters: "category-carpentry",
+  cleaning: "category-cleaning",
+  concreting: "category-concreting",
+  decking: "category-decking",
+  doors: "category-doors",
+  electricians: "category-electrical",
+  fencing: "category-fencing",
+  handyman: "category-handyman",
+  kitchen: "category-kitchen",
+  "landscaping-and-gardening": "category-landscaping",
+  painters: "category-painting",
+  paving: "category-paving",
+  "pest-control": "category-pest-control",
+  "plastering-and-gyprock": "category-plastering",
+  plumbers: "category-plumbing",
+  rendering: "category-rendering",
+  "retaining-walls": "category-retaining-walls",
+  roofing: "category-roofing",
+  security: "category-security",
+  tilers: "category-tiling",
+  waterproofing: "category-waterproofing",
+  windows: "category-windows",
+};
+
+/** Category slug → photo slot (null for slugs without one — callers render
+ *  the category's fallback Art instead; deep-taxonomy slots can be added later). */
+export const slotForCategory = (slug: string): PhotoSlotId | null =>
+  CATEGORY_PHOTO_SLOT[slug] ?? null;
+
+/** Serializable subset of ResolvedPhoto for client components (CustomerApp,
+ *  TradieApp strips, pickers) — plain <img src srcSet sizes> data, no fs access. */
+export interface TilePhoto {
+  src: string;
+  srcSet: string;
+  sizes: string;
+  alt: string;
+  width: number;
+  height: number;
+}
+
+/** Resolve a category slug to serializable tile data: the fetched photo (or
+ *  null before the pipeline has run) plus the slot's fallback Art kind. */
+export function tilePhotoForCategory(slug: string): { photo: TilePhoto | null; art: ArtKind } {
+  const slotId = slotForCategory(slug);
+  if (!slotId) return { photo: null, art: "house" };
+  const p = getPhoto(slotId);
+  return {
+    photo: p
+      ? { src: p.src, srcSet: p.srcSet, sizes: p.sizes, alt: p.alt, width: p.width, height: p.height }
+      : null,
+    art: PHOTO_SLOTS[slotId].fallbackArt,
+  };
+}
 
 /** Deterministic default cover rotation for profiles without an uploaded cover. */
 export const defaultCoverSlot = (seed: number): PhotoSlotId =>

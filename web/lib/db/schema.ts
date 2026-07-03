@@ -55,7 +55,10 @@ export const tradieProfiles = pgTable("tradie_profiles", {
   userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }).unique(),
   businessName: varchar("business_name", { length: 200 }),
   abn: varchar("abn", { length: 14 }),
-  trades: jsonb("trades").$type<string[]>().notNull().default([]),
+  trades: jsonb("trades").$type<string[]>().notNull().default([]), // legacy names — kept as-is
+  // R5 EXTENDED: taxonomy top-level slugs (source of truth for /find + pickers).
+  // Index 0 = primary category.
+  categorySlugs: jsonb("category_slugs").$type<string[]>().notNull().default([]),
   suburb: varchar("suburb", { length: 120 }),
   state: varchar("state", { length: 8 }).default("VIC"),
   licenceNumber: varchar("licence_number", { length: 80 }),
@@ -69,6 +72,18 @@ export const tradieProfiles = pgTable("tradie_profiles", {
   reliabilityScore: integer("reliability_score"), // 0..100; null until enough data
   jobsCompleted: integer("jobs_completed").notNull().default(0),
 });
+
+/* ---------- category taxonomy (R5 EXTENDED — SPEC_V2_CATEGORIES) ----------
+ * Seeded from lib/data/categories.json (232 top-level + 854 sub = 1086 rows)
+ * by scripts/seed-categories.ts. slug is the natural PK; parent is the
+ * top-level slug for subcategories (null for top-levels). */
+export const categories = pgTable("categories", {
+  slug: varchar("slug", { length: 120 }).primaryKey(),
+  name: varchar("name", { length: 160 }).notNull(),
+  parent: varchar("parent", { length: 120 }),
+  synonyms: jsonb("synonyms").$type<string[]>().notNull().default([]),
+  description: text("description"), // our own one-liners; popular 26 now, rest later
+}, (t) => [index("categories_parent_idx").on(t.parent)]);
 
 /* ---------- companies (ABN-anchored) ---------- */
 export const companies = pgTable("companies", {
@@ -96,6 +111,18 @@ export const companies = pgTable("companies", {
   reviewCount: integer("review_count").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => [index("companies_name_idx").on(t.name)]);
+
+/* Company ↔ category m2m — one primary (the headline trade) + secondaries. */
+export const companyCategories = pgTable("company_categories", {
+  id: serial("id").primaryKey(),
+  companyId: integer("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+  categorySlug: varchar("category_slug", { length: 120 }).notNull()
+    .references(() => categories.slug, { onDelete: "cascade" }),
+  primary: boolean("is_primary").notNull().default(false),
+}, (t) => [
+  uniqueIndex("company_category_unique").on(t.companyId, t.categorySlug),
+  index("company_categories_slug_idx").on(t.categorySlug),
+]);
 
 export const builderProfiles = pgTable("builder_profiles", {
   id: serial("id").primaryKey(),
@@ -189,7 +216,11 @@ export const jobs = pgTable("jobs", {
   startText: varchar("start_text", { length: 80 }).notNull(),
   duration: varchar("duration", { length: 80 }).notNull(),
   requirement: varchar("requirement", { length: 200 }),
-  trade: varchar("trade", { length: 120 }),
+  trade: varchar("trade", { length: 120 }), // legacy label — kept working (R5)
+  // R5 EXTENDED: taxonomy top-level slug. FK-ish by convention (validated in
+  // the API against lib/data/categories), no hard FK so legacy/imported jobs
+  // never break on taxonomy edits.
+  categorySlug: varchar("category_slug", { length: 120 }),
   status: jobStatus("status").notNull().default("open"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 }, (t) => [index("jobs_status_idx").on(t.status)]);
@@ -312,6 +343,16 @@ export const companiesRelations = relations(companies, ({ many, one }) => ({
   reviews: many(reviews),
   jobs: many(jobs),
   claimedBy: one(users, { fields: [companies.claimedByUserId], references: [users.id] }),
+  categories: many(companyCategories),
+}));
+
+export const categoriesRelations = relations(categories, ({ many }) => ({
+  companies: many(companyCategories),
+}));
+
+export const companyCategoriesRelations = relations(companyCategories, ({ one }) => ({
+  company: one(companies, { fields: [companyCategories.companyId], references: [companies.id] }),
+  category: one(categories, { fields: [companyCategories.categorySlug], references: [categories.slug] }),
 }));
 
 export const signalsRelations = relations(signals, ({ one, many }) => ({
