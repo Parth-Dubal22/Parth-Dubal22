@@ -569,3 +569,71 @@ input:disabled,select:disabled,textarea:disabled,input[readonly]{background:var(
 .pwrap .f-legal{margin-top:var(--s7)}
 .card details summary{font-weight:600;cursor:pointer}
 .card details ul{margin:.6rem 0 0 1.1rem;color:var(--slate);font-size:.9rem}
+
+/* ================================================================== */
+/* R5 categories — /find grid, A-Z index, category thumbnail + search */
+/* picker (SPEC_V2_CATEGORIES §3-4). Extends §11.2 .cat-grid/.cat-tile. */
+/* ================================================================== */
+
+/* compact grid — customer "what do you need done?" strip, tradie jobs strip,
+   /jobs filter row: smaller minimum, tighter gap than the 26-tile hero grid. */
+.cat-grid.compact{grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:var(--s3)}
+.cat-grid.compact .cat-tile .cap.title{font-size:.82rem}
+
+/* A-Z index — "More categories" full text list under the popular grid.
+   2-col mobile / 4-col desktop, anchored letter groups with jump links. */
+.az-jump{display:flex;flex-wrap:wrap;gap:.35rem;margin:var(--s4) 0 var(--s5)}
+.az-jump a{font:600 .78rem var(--fm);letter-spacing:.04em;min-width:32px;text-align:center;
+  padding:.3rem .1rem;border-radius:var(--r-1);color:var(--slate);background:var(--mist);
+  border:1px solid var(--line);transition:background var(--t-1),color var(--t-1)}
+.az-jump a:hover,.az-jump a:focus-visible{background:var(--navy);color:#fff}
+.az-index{display:block}
+.az-group{scroll-margin-top:84px;margin-bottom:var(--s5)}
+.az-group>h3{font:700 1.4rem var(--fd);color:var(--orange);margin-bottom:var(--s3);
+  padding-bottom:.3rem;border-bottom:2px solid var(--line)}
+.az-cols{columns:2;column-gap:var(--s6)}
+@media(min-width:1024px){.az-cols{columns:4}}
+.az-cols a{display:block;break-inside:avoid;padding:.32rem 0;color:var(--ink);font-size:.94rem;
+  line-height:1.4;transition:color var(--t-1)}
+.az-cols a:hover,.az-cols a:focus-visible{color:var(--orange)}
+
+/* 44px category thumbnail + name chip on job cards (§4). */
+.cat-chip{display:inline-flex;align-items:center;gap:.45rem;padding:.2rem .5rem .2rem .2rem;
+  border-radius:var(--r-pill);background:var(--mist);border:1px solid var(--line);
+  font:600 .72rem var(--fb);color:var(--ink);white-space:nowrap}
+.cat-thumb{width:44px;height:44px;border-radius:var(--r-2);overflow:hidden;flex:none;position:relative;background:var(--cloud)}
+.cat-thumb img,.cat-thumb .art{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+
+/* search-as-you-type category picker (onboarding + tradie profile). */
+.cat-search{position:relative}
+.cat-search .cat-input{width:100%}
+.cat-results{list-style:none;margin:.5rem 0 0;padding:.3rem;border:1px solid var(--line);
+  border-radius:var(--r-4);background:var(--paper);box-shadow:var(--sh2);max-height:320px;overflow:auto}
+.cat-result{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;
+  padding:.55rem .6rem;border-radius:var(--r-2);color:var(--ink);transition:background var(--t-1)}
+.cat-result:hover,.cat-result:focus-visible,.cat-result.active{background:var(--mist)}
+.cat-result[aria-selected=true]{background:var(--csoft)}
+.cat-result .r-name{font-weight:600;font-size:.95rem}
+.cat-result .r-via{font:500 .72rem var(--fm);color:var(--slate);margin-top:.1rem}
+.cat-result .r-add{margin-left:auto;flex:none;color:var(--orange);font-weight:700}
+.cat-chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.7rem}
+.cat-chosen{display:inline-flex;align-items:center;gap:.45rem;padding:.35rem .3rem .35rem .7rem;
+  border-radius:var(--r-pill);background:var(--cloud);border:1px solid var(--line);
+  font:600 .82rem var(--fb);color:var(--ink)}
+.cat-chosen.is-primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.cat-chosen .p-tag{font:700 .58rem var(--fm);letter-spacing:.08em;text-transform:uppercase;
+  padding:.12rem .35rem;border-radius:var(--r-1);background:var(--orange);color:#fff}
+.cat-chosen .x{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:var(--r-1);
+  color:inherit;opacity:.75;transition:opacity var(--t-1),background var(--t-1)}
+.cat-chosen .x:hover{opacity:1;background:rgba(255,255,255,.18)}
+.cat-chosen:not(.is-primary) .x:hover{background:rgba(10,27,46,.08)}
+.cat-chosen .mk-primary{font:600 .66rem var(--fm);letter-spacing:.04em;text-transform:uppercase;
+  color:var(--orange);padding:.1rem .3rem;border-radius:var(--r-1)}
+.cat-chosen .mk-primary:hover{background:rgba(255,90,31,.12)}
+
+/* "Tradies in this category" secondary list on /find/[category]. */
+.tradie-row{display:flex;align-items:center;gap:.8rem;padding:.7rem 0;border-bottom:1px solid var(--line)}
+.tradie-row:last-child{border-bottom:0}
+.tradie-row .grow{min-width:0}
+.tradie-row .t-name{font-weight:600}
+.tradie-row .t-sub{font:500 .8rem var(--fm);color:var(--slate);letter-spacing:.03em}

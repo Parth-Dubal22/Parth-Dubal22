@@ -7,6 +7,8 @@ import { db, tables } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { canSeeRiskDetail } from "@/lib/access";
 import { formatAbn } from "@/lib/format";
+import { popularTiles } from "@/lib/find";
+import { TRADE_TO_CATEGORY } from "@/lib/data/categories";
 import TradieApp from "./TradieApp";
 import type {
   TradieAlert, TradieJob, TradieProfileData, TradieReview, TradieWatchItem,
@@ -123,6 +125,7 @@ export default async function TradiePage() {
     builderRisk: seeRisk ? j.company.riskLevel : null,
     applicants: j.applications.length,
     applied: j.applications.some((a) => a.tradieUserId === user.id),
+    categorySlug: j.categorySlug ?? (j.trade ? TRADE_TO_CATEGORY[j.trade] ?? null : null),
   }));
 
   const myReviews: TradieReview[] = reviewRows.map((r) => ({
@@ -141,6 +144,7 @@ export default async function TradiePage() {
   const profileData: TradieProfileData = {
     name: user.name,
     trades: profile?.trades ?? [],
+    categorySlugs: profile?.categorySlugs ?? [],
     suburb: profile?.suburb ?? "",
     state: profile?.state ?? "VIC",
     abn: formatAbn(profile?.abn ?? ""),
@@ -158,6 +162,8 @@ export default async function TradiePage() {
     ratingAvg,
   };
 
+  const categoryTiles = await popularTiles(false);
+
   return (
     <TradieApp
       seeRisk={seeRisk}
@@ -166,6 +172,7 @@ export default async function TradiePage() {
       alerts={alerts}
       jobs={jobsList}
       reviews={myReviews}
+      categoryTiles={categoryTiles}
     />
   );
 }

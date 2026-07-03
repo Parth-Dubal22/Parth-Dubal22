@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { requireUser } from "@/lib/session";
 import { formatAbn, ratingX10ToNumber, hasVerifiedBadge } from "@/lib/format";
+import { popularTiles } from "@/lib/find";
 import CustomerApp from "./CustomerApp";
 import type { CustomerMe, DirectoryBuilder, QuoteRequestItem } from "./types";
 
@@ -15,7 +16,7 @@ export const dynamic = "force-dynamic";
 export default async function CustomerPage() {
   const user = await requireUser("customer");
 
-  const [profile, companyRows, requestRows] = await Promise.all([
+  const [profile, companyRows, requestRows, categoryRows, categoryTiles] = await Promise.all([
     db.query.customerProfiles.findFirst({
       where: eq(tables.customerProfiles.userId, user.id),
     }),
@@ -26,7 +27,20 @@ export default async function CustomerPage() {
       where: eq(tables.quoteRequests.customerUserId, user.id),
       orderBy: (q, { desc }) => [desc(q.createdAt)],
     }),
+    // R5: company ↔ category mappings, so the directory can be filtered by the
+    // "what do you need done?" popular grid. Primary category sorts to index 0.
+    db.query.companyCategories.findMany(),
+    popularTiles(false),
   ]);
+
+  // companyId → ordered category slugs (primary first).
+  const catByCompany = new Map<number, string[]>();
+  for (const r of categoryRows) {
+    const list = catByCompany.get(r.companyId) ?? [];
+    if (r.primary) list.unshift(r.categorySlug);
+    else list.push(r.categorySlug);
+    catByCompany.set(r.companyId, list);
+  }
 
   // Positive/neutral facts only — riskLevel/signals are never mapped for customers.
   const directory: DirectoryBuilder[] = companyRows.map((c) => ({
@@ -41,6 +55,7 @@ export default async function CustomerPage() {
     verified: hasVerifiedBadge(c.tier),
     rating: ratingX10ToNumber(c.ratingAvg),
     reviewCount: c.reviewCount,
+    categorySlugs: catByCompany.get(c.id) ?? [],
   }));
 
   // Verified-first sort, then by rating (prototype directory order).
@@ -68,5 +83,7 @@ export default async function CustomerPage() {
         .join(" · ") || "Homeowner",
   };
 
-  return <CustomerApp me={me} directory={directory} requests={requests} />;
+  return (
+    <CustomerApp me={me} directory={directory} requests={requests} categoryTiles={categoryTiles} />
+  );
 }

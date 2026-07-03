@@ -9,7 +9,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { toast } from "@/components/Toast";
-import { ALL_TRADES, initials } from "@/lib/format";
+import { initials } from "@/lib/format";
+import CategorySearchPicker from "@/components/CategorySearchPicker";
+import { CATEGORY_TO_TRADE } from "@/lib/data/categories";
 
 type WizardRole = "customer" | "tradie" | "builder";
 
@@ -55,6 +57,7 @@ interface SavedState {
   suburb?: string;
   abn?: string;
   trades?: string[];
+  cats?: string[];
   lic?: string;
   ins?: string;
   insExpiry?: string;
@@ -112,6 +115,8 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
   const [suburb, setSuburb] = useState("");
   const [abn, setAbn] = useState("");
   const [trades, setTrades] = useState<string[]>([]);
+  // R5: taxonomy category slugs (index 0 = primary) — source of truth for tradies.
+  const [cats, setCats] = useState<string[]>([]);
   const [lic, setLic] = useState("");
   const [ins, setIns] = useState("");
   const [insExpiry, setInsExpiry] = useState("");
@@ -159,6 +164,7 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
           !!savedRole ||
           strings.some((v) => typeof v === "string" && v.trim() !== "") ||
           (Array.isArray(s.trades) && s.trades.length > 0) ||
+          (Array.isArray(s.cats) && s.cats.length > 0) ||
           (Array.isArray(s.builds) && s.builds.length > 0);
         if (meaningful) {
           if (typeof s.name === "string") setName(s.name);
@@ -166,6 +172,7 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
           if (typeof s.suburb === "string") setSuburb(s.suburb);
           if (typeof s.abn === "string") setAbn(s.abn);
           if (Array.isArray(s.trades)) setTrades(s.trades.filter((t): t is string => typeof t === "string"));
+          if (Array.isArray(s.cats)) setCats(s.cats.filter((t): t is string => typeof t === "string"));
           if (typeof s.lic === "string") setLic(s.lic);
           if (typeof s.ins === "string") setIns(s.ins);
           if (typeof s.insExpiry === "string") setInsExpiry(s.insExpiry);
@@ -193,14 +200,14 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
     if (!hydrated.current || step === 3) return;
     try {
       const s: SavedState = {
-        step, role, name, email, suburb, abn, trades, lic, ins, insExpiry,
+        step, role, name, email, suburb, abn, trades, cats, lic, ins, insExpiry,
         company, builderLic, builds, projectType,
       };
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
     } catch {
       /* storage full/blocked — persistence is best-effort */
     }
-  }, [step, role, name, email, suburb, abn, trades, lic, ins, insExpiry, company, builderLic, builds, projectType]);
+  }, [step, role, name, email, suburb, abn, trades, cats, lic, ins, insExpiry, company, builderLic, builds, projectType]);
 
   function clearSaved() {
     try {
@@ -217,7 +224,7 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
     setStep(1);
     setRole(initialRole ?? null);
     setName(""); setEmail(""); setPassword(""); setPassword2("");
-    setSuburb(""); setAbn(""); setTrades([]); setLic(""); setIns(""); setInsExpiry("");
+    setSuburb(""); setAbn(""); setTrades([]); setCats([]); setLic(""); setIns(""); setInsExpiry("");
     setCompany(""); setBuilderLic(""); setBuilds([]); setProjectType("New home build");
   }
 
@@ -242,7 +249,11 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
       if (role === "customer") profile.projectType = projectType;
       if (role === "tradie") {
         profile.abn = abn.trim() || undefined;
-        profile.trades = trades;
+        // R5: send taxonomy slugs; keep legacy trade names populated for old surfaces.
+        profile.categorySlugs = cats;
+        profile.trades = [
+          ...new Set(cats.map((s) => CATEGORY_TO_TRADE[s]).filter(Boolean)),
+        ];
         profile.licenceNumber = lic.trim() || undefined;
         profile.insurance = ins.trim() || undefined;
         profile.insuranceExpiry = insExpiry || undefined;
@@ -445,23 +456,15 @@ export default function OnboardingWizard({ initialRole, sideArt }: OnboardingWiz
               </div>
               {role === "tradie" && (
                 <div id="tradie-extra" className="form">
-                  <fieldset>
+                  <fieldset id="trade-chips">
                     <legend className="field-legend">
-                      Your trades <span className="hint">— pick all that apply</span>
+                      Your trades <span className="hint">— search and add all that apply</span>
                     </legend>
-                    <div className="chips" id="trade-chips">
-                      {ALL_TRADES.map((t) => (
-                        <button
-                          type="button"
-                          key={t}
-                          className={`chip${trades.includes(t) ? " on" : ""}`}
-                          aria-pressed={trades.includes(t)}
-                          onClick={() => toggle(trades, setTrades, t)}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
+                    <CategorySearchPicker
+                      label="Search your trades"
+                      value={cats}
+                      onChange={(slugs) => setCats(slugs)}
+                    />
                   </fieldset>
                   <div className="f2">
                     <label>

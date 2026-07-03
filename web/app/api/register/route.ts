@@ -4,6 +4,22 @@ import { hash } from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { cleanAbn, slugify } from "@/lib/format";
+import { findCategory, categorySlugForTradeText, CATEGORY_TO_TRADE } from "@/lib/data/categories";
+
+/** Keep only valid TOP-LEVEL taxonomy slugs (dedupe, cap at 12). */
+function cleanCategorySlugs(slugs: string[] | undefined): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of slugs ?? []) {
+    const c = findCategory(s);
+    if (c && c.parent === null && !seen.has(s)) {
+      seen.add(s);
+      out.push(s);
+      if (out.length >= 12) break;
+    }
+  }
+  return out;
+}
 
 /**
  * POST /api/register — public.
@@ -16,6 +32,7 @@ const profileSchema = z.object({
   projectType: z.string().trim().max(120).optional(),
   abn: z.string().trim().max(20).optional(),
   trades: z.array(z.string().trim().max(60)).max(20).optional(),
+  categorySlugs: z.array(z.string().trim().max(120)).max(12).optional(),
   licenceNumber: z.string().trim().max(80).optional(),
   insurance: z.string().trim().max(160).optional(),
   insuranceExpiry: z.string().trim().max(20).optional(), // yyyy-mm-dd
@@ -89,10 +106,24 @@ export async function POST(req: Request) {
         });
       } else if (role === "tradie") {
         const abnDigits = cleanAbn(profile.abn ?? "");
+        // R5: categorySlugs (taxonomy) are the source of truth. Prefer the ones
+        // the picker sent; else derive from any legacy trade text. Keep legacy
+        // `trades` populated from the mappable slugs (CATEGORY_TO_TRADE).
+        let categorySlugs = cleanCategorySlugs(profile.categorySlugs);
+        if (categorySlugs.length === 0 && profile.trades?.length) {
+          categorySlugs = cleanCategorySlugs(
+            profile.trades.map((t) => categorySlugForTradeText(t) ?? "").filter(Boolean),
+          );
+        }
+        const trades =
+          profile.trades && profile.trades.length
+            ? profile.trades
+            : [...new Set(categorySlugs.map((s) => CATEGORY_TO_TRADE[s]).filter(Boolean))];
         await tx.insert(tables.tradieProfiles).values({
           userId: user.id,
           abn: abnDigits.length === 11 ? abnDigits : null,
-          trades: profile.trades ?? [],
+          trades,
+          categorySlugs,
           suburb: profile.suburb || null,
           licenceNumber: profile.licenceNumber || null,
           insuranceProvider: profile.insurance || null,
@@ -138,6 +169,12 @@ export async function POST(req: Request) {
           companyId = company.id;
         }
         await tx.insert(tables.builderProfiles).values({ userId: user.id, companyId });
+        // R5: every builder is listed under the "building" top-level as primary
+        // so they appear in /find/building. No-op if already mapped.
+        await tx
+          .insert(tables.companyCategories)
+          .values({ companyId, categorySlug: "building", primary: true })
+          .onConflictDoNothing();
       }
     });
   } catch (err: unknown) {

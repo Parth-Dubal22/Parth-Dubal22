@@ -16,6 +16,8 @@ export type DirectoryBuilder = {
   verified: boolean;
   rating: number | null;
   reviewCount: number;
+  /** R5: taxonomy top-level slugs the company is listed under (index 0 primary). */
+  categorySlugs: string[];
 };
 
 export type QuoteRequestItem = {

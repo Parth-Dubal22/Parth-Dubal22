@@ -3,6 +3,22 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { findCategory } from "@/lib/data/categories";
+
+/** Keep only valid TOP-LEVEL taxonomy slugs (dedupe, cap at 12). Index 0 = primary. */
+function cleanCategorySlugs(slugs: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const s of slugs) {
+    const c = findCategory(s);
+    if (c && c.parent === null && !seen.has(s)) {
+      seen.add(s);
+      out.push(s);
+      if (out.length >= 12) break;
+    }
+  }
+  return out;
+}
 
 /**
  * PUT /api/profile — any signed-in role; role-aware partial update.
@@ -21,6 +37,7 @@ const tradieSchema = z.object({
   name: z.string().trim().min(1, "Display name can't be empty.").max(120).optional(),
   businessName: z.string().trim().max(200).nullish(),
   trades: z.array(z.string().trim().min(1).max(60)).max(24).optional(),
+  categorySlugs: z.array(z.string().trim().min(1).max(120)).max(12).optional(),
   suburb: z.string().trim().max(120).nullish(),
   licenceNumber: z.string().trim().max(80).nullish(),
   insuranceProvider: z.string().trim().max(160).nullish(),
@@ -78,6 +95,7 @@ export async function PUT(req: Request) {
     const set: Partial<typeof tables.tradieProfiles.$inferInsert> = {};
     if (d.businessName !== undefined) set.businessName = d.businessName || null;
     if (d.trades !== undefined) set.trades = d.trades;
+    if (d.categorySlugs !== undefined) set.categorySlugs = cleanCategorySlugs(d.categorySlugs);
     if (d.suburb !== undefined) set.suburb = d.suburb || null;
     if (d.licenceNumber !== undefined) set.licenceNumber = d.licenceNumber || null;
     if (d.insuranceProvider !== undefined) set.insuranceProvider = d.insuranceProvider || null;

@@ -10,6 +10,9 @@ import EmptyState from "@/components/EmptyState";
 import Stars from "@/components/Stars";
 import { toast } from "@/components/Toast";
 import { initials, timeAgo } from "@/lib/format";
+import CategoryPicker from "@/components/CategoryPicker";
+import { popularLabel } from "@/lib/data/categories";
+import type { TileData } from "@/lib/find";
 import type { CustomerMe, DirectoryBuilder, QuoteRequestItem } from "./types";
 
 async function api(path: string, method: string, body?: unknown) {
@@ -144,10 +147,12 @@ export default function CustomerApp({
   me,
   directory,
   requests,
+  categoryTiles,
 }: {
   me: CustomerMe;
   directory: DirectoryBuilder[];
   requests: QuoteRequestItem[];
+  categoryTiles: TileData[];
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<TabId>("c-find");
@@ -156,7 +161,10 @@ export default function CustomerApp({
   /* directory filters (prototype renderDir) */
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<DirFilter>("all");
-  const list = useMemo(() => {
+  /* R5: "what do you need done?" popular-grid category filter (single-select). */
+  const [cat, setCat] = useState<string | null>(null);
+
+  const { list, catFallback } = useMemo(() => {
     const ql = q.toLowerCase();
     let l = directory.filter((b) => b.name.toLowerCase().includes(ql));
     if (filter === "verified") l = l.filter((b) => b.verified);
@@ -167,8 +175,22 @@ export default function CustomerApp({
       });
     if (filter === "renovations")
       l = l.filter((b) => b.tags.join(" ").toLowerCase().includes("renov"));
-    return l;
-  }, [directory, q, filter]);
+
+    // Category relevance: "Builders" (building) = every builder; any other
+    // category keeps companies listed under it (primary or secondary). Never
+    // dead-end — if nothing matches, show verified-first and flag a fallback.
+    let fallback = false;
+    if (cat && cat !== "building") {
+      const matched = l.filter((b) => b.categorySlugs.includes(cat));
+      if (matched.length > 0) {
+        l = matched;
+      } else {
+        fallback = true;
+        l = [...l].sort((a, b) => Number(b.verified) - Number(a.verified));
+      }
+    }
+    return { list: l, catFallback: fallback };
+  }, [directory, q, filter, cat]);
 
   /* quote request → my requests */
   const [quoteBusy, setQuoteBusy] = useState<number | null>(null);
@@ -295,6 +317,35 @@ export default function CustomerApp({
           {/* FIND */}
           <div className={"panel" + (tab === "c-find" ? " on" : "")} id="c-find">
             <div className="topbar"><h2>Find a builder you can trust with a deposit</h2></div>
+
+            {/* R5: "what do you need done?" popular-category grid (compact). */}
+            <div className="topbar" style={{ marginBottom: "var(--s2)" }}>
+              <h3 style={{ fontSize: "1.05rem" }}>What do you need done?</h3>
+              {cat ? (
+                <button className="btn btn-g btn-s" onClick={() => setCat(null)}>
+                  Clear “{popularLabel(cat)}”
+                </button>
+              ) : null}
+            </div>
+            <CategoryPicker
+              tiles={categoryTiles}
+              selected={cat ? [cat] : []}
+              onToggle={(slug) => setCat((c) => (c === slug ? null : slug))}
+              ariaLabel="Filter builders by category"
+            />
+            <p className="hint" style={{ margin: "var(--s3) 0 var(--s4)" }}>
+              Browse the full list on <Link href="/find">Find a pro</Link> — 200+ trades, each pro
+              checked against public records.
+            </p>
+
+            {cat && catFallback ? (
+              <p className="note info" role="status">
+                No builder is listed under <b>{popularLabel(cat)}</b> yet — showing verified
+                builders you can still check by ABN. Every builder can be checked whether or not
+                they have a profile.
+              </p>
+            ) : null}
+
             <div className="filters">
               <input
                 type="text"
@@ -332,6 +383,7 @@ export default function CustomerApp({
                     onClick={() => {
                       setQ("");
                       setFilter("all");
+                      setCat(null);
                     }}
                   >
                     Clear filters

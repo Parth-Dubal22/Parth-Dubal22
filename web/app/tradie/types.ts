@@ -50,6 +50,8 @@ export type TradieJob = {
   builderRisk: RiskLevel | null; // null = gated
   applicants: number;
   applied: boolean;
+  /** R5: taxonomy top-level slug (from categorySlug or the legacy trade). */
+  categorySlug: string | null;
 };
 
 export type TradieReview = {
@@ -66,6 +68,8 @@ export type PortfolioItem = { art: string; caption: string };
 export type TradieProfileData = {
   name: string;
   trades: string[];
+  /** R5: taxonomy top-level slugs (index 0 = primary) — source of truth. */
+  categorySlugs: string[];
   suburb: string;
   state: string;
   abn: string; // formatted

@@ -7,14 +7,29 @@
  *  is PRIVATE to subscribers (canSeeRiskDetail) — stripped server-side so it
  *  never reaches a non-subscriber's browser. Applying is ALWAYS free.
  */
-import { and, desc, eq, ilike } from "drizzle-orm";
+import { and, desc, eq, ilike, or } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { currentUser } from "@/lib/session";
 import { canSeeRiskDetail } from "@/lib/access";
-import { ALL_TRADES, ST, ratingX10ToNumber, timeAgo } from "@/lib/format";
+import { ST, ratingX10ToNumber, timeAgo } from "@/lib/format";
 import LandingNav from "@/components/landing/LandingNav";
 import EmptyState from "@/components/EmptyState";
+import Art from "@/components/Art";
+import CategoryGrid from "@/components/CategoryGrid";
+import { tilesFor, openJobsByCategory } from "@/lib/find";
+import {
+  POPULAR,
+  popularLabel,
+  TRADE_TO_CATEGORY,
+  CATEGORY_TO_TRADE,
+} from "@/lib/data/categories";
+import { tilePhotoForCategory } from "@/lib/photos";
 import ApplyButton from "./ApplyButton";
+
+/** A job's effective taxonomy slug: the stored categorySlug, or the legacy
+ *  trade mapped through TRADE_TO_CATEGORY (keeps ?trade= links + old rows working). */
+const jobCategorySlug = (j: { categorySlug: string | null; trade: string | null }) =>
+  j.categorySlug ?? (j.trade ? TRADE_TO_CATEGORY[j.trade] ?? null : null);
 
 export const dynamic = "force-dynamic";
 
@@ -64,14 +79,26 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
   const typeF = one(sp.type); // "" | "day" | "sub"
   const tradeF = one(sp.trade);
   const locF = one(sp.loc).trim().slice(0, 160);
+  // R5: ?category= is the new filter; ?trade= stays a legacy alias mapped to it.
+  const catF = one(sp.category) || (tradeF ? TRADE_TO_CATEGORY[tradeF] ?? "" : "");
 
   const user = await currentUser();
-  const seeRisk = await canSeeRiskDetail(user);
+  const [seeRisk, jobCounts] = await Promise.all([
+    canSeeRiskDetail(user),
+    openJobsByCategory(),
+  ]);
 
   const conds = [eq(tables.jobs.status, "open")];
   if (typeF === "day") conds.push(eq(tables.jobs.type, "day_hire"));
   if (typeF === "sub") conds.push(eq(tables.jobs.type, "subcontract"));
-  if (tradeF) conds.push(eq(tables.jobs.trade, tradeF));
+  if (catF) {
+    // Match the taxonomy slug OR the legacy trade label it maps to.
+    const legacyTrade = CATEGORY_TO_TRADE[catF];
+    const catCond = legacyTrade
+      ? or(eq(tables.jobs.categorySlug, catF), eq(tables.jobs.trade, legacyTrade))
+      : eq(tables.jobs.categorySlug, catF);
+    if (catCond) conds.push(catCond);
+  }
   if (locF) conds.push(ilike(tables.jobs.location, `%${locF.replace(/[%_\\]/g, "\\$&")}%`));
 
   const jobRows = await db.query.jobs.findMany({
@@ -83,13 +110,23 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
     orderBy: [desc(tables.jobs.createdAt), desc(tables.jobs.id)],
   });
 
-  const filtered = typeF !== "" || tradeF !== "" || locF !== "";
+  const filtered = typeF !== "" || catF !== "" || locF !== "";
+
+  // Popular category tiles with open-jobs count pills, linking to ?category=.
+  const catTiles = tilesFor(POPULAR, jobCounts);
+  const catHref = (slug: string) => {
+    const q = new URLSearchParams();
+    q.set("category", slug);
+    if (typeF) q.set("type", typeF);
+    if (locF) q.set("loc", locF);
+    return `/jobs?${q.toString()}`;
+  };
 
   // Chip links preserve the other filters (server-rendered — crawlable).
   const chipHref = (t: "" | "day" | "sub") => {
     const q = new URLSearchParams();
     if (t) q.set("type", t);
-    if (tradeF) q.set("trade", tradeF);
+    if (catF) q.set("category", catF);
     if (locF) q.set("loc", locF);
     const s = q.toString();
     return s ? `/jobs?${s}` : "/jobs";
@@ -114,18 +151,22 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
               <span className="hint" style={{ marginLeft: "auto" }}>Subscribers see builder pay-status on every job — applying is always free.</span>
             </div>
 
-            {/* Filter controls use the system §5 recipe (44px scale, styled select chevron). */}
-            <form method="get" action="/jobs" className="filters" aria-label="Filter jobs">
+            {/* R5: category filter = popular grid (link mode), count pill = open
+                jobs per category. Keeps ?trade= working via the alias above. */}
+            <div className="topbar" style={{ margin: "var(--s5) 0 var(--s2)" }}>
+              <h3 style={{ fontSize: "1.05rem" }}>Filter by category</h3>
+              {catF ? (
+                <a className="btn btn-g btn-s" href="/jobs">
+                  Clear “{popularLabel(catF)}”
+                </a>
+              ) : null}
+            </div>
+            <CategoryGrid tiles={catTiles} hrefFor={catHref} countLabel="open jobs" compact />
+
+            {/* Location filter (44px scale — system §5). */}
+            <form method="get" action="/jobs" className="filters" style={{ marginTop: "var(--s4)" }} aria-label="Filter jobs by location">
               {typeF ? <input type="hidden" name="type" value={typeF} /> : null}
-              <label className="check-row">
-                Trade
-                <div className="w-m">
-                  <select name="trade" defaultValue={tradeF} aria-label="Filter by trade">
-                    <option value="">All trades</option>
-                    {ALL_TRADES.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                </div>
-              </label>
+              {catF ? <input type="hidden" name="category" value={catF} /> : null}
               <label className="check-row">
                 Location
                 <div className="w-m">
@@ -141,6 +182,9 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                 const rating = ratingX10ToNumber(j.company.ratingAvg);
                 const applied = !!user && j.applications.some((a) => a.tradieUserId === user.id);
                 const isOwner = !!user && j.builderUserId === user.id;
+                const catSlug = jobCategorySlug(j);
+                const catName = catSlug ? popularLabel(catSlug) : j.trade;
+                const catTile = catSlug ? tilePhotoForCategory(catSlug) : null;
                 return (
                   <div className="jobcard" key={j.id}>
                     <div className="top">
@@ -151,8 +195,22 @@ export default async function JobsPage({ searchParams }: { searchParams: Promise
                           <span>Starts {j.startText}</span>
                           <span>{j.duration}</span>
                           {j.requirement ? <span>{j.requirement}</span> : null}
-                          {j.trade ? <span>{j.trade}</span> : null}
                         </div>
+                        {catName ? (
+                          <span className="cat-chip" style={{ marginTop: ".5rem" }}>
+                            {catTile ? (
+                              <span className="cat-thumb">
+                                {catTile.photo ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={catTile.photo.src} srcSet={catTile.photo.srcSet} sizes="44px" alt="" loading="lazy" decoding="async" />
+                                ) : (
+                                  <Art kind={catTile.art} />
+                                )}
+                              </span>
+                            ) : null}
+                            {catSlug ? <a href={`/jobs?category=${catSlug}`}>{catName}</a> : catName}
+                          </span>
+                        ) : null}
                       </div>
                       <span className="rate">{j.rate}</span>
                     </div>

@@ -131,8 +131,11 @@ async function main() {
     { key: "rh", slug: "building", primary: true },            // townhouses + renovations
     { key: "rh", slug: "extensions-and-additions", primary: false },
     { key: "rh", slug: "bathroom", primary: false },
+    { key: "rh", slug: "tilers", primary: false },             // does its own wet-area tiling
     { key: "sp", slug: "building", primary: true },            // multi-res + fit-out
     { key: "sp", slug: "shopfitters", primary: false },
+    { key: "sp", slug: "bricklaying", primary: false },        // posts brickwork packages
+    { key: "hc", slug: "concreting", primary: false },         // volume slabs + driveways
   ];
   await db.insert(tables.companyCategories).values(
     companyCategoryRows.map((r) => ({

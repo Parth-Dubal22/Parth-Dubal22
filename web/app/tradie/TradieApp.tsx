@@ -3,14 +3,18 @@
  *  burger, prototype markup + copy). All mutations go through the API routes.
  *  R2 sweep: token-scale spacing, per-action busy states, SVG icons (no glyphs),
  *  <EmptyState> zero-states, error toasts, mobile drawer scrim/Escape/focus-return. */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Art from "@/components/Art";
 import EmptyState from "@/components/EmptyState";
 import Stars from "@/components/Stars";
 import { toast } from "@/components/Toast";
-import { ALL_TRADES, ST, centsToMoney, fmtDate, initials, timeAgo } from "@/lib/format";
+import { ST, centsToMoney, fmtDate, initials, timeAgo } from "@/lib/format";
+import CategoryPicker from "@/components/CategoryPicker";
+import CategorySearchPicker from "@/components/CategorySearchPicker";
+import { CATEGORY_TO_TRADE, popularLabel } from "@/lib/data/categories";
+import type { TileData } from "@/lib/find";
 import type {
   PortfolioItem, TradieAlert, TradieJob, TradieProfileData, TradieReview, TradieWatchItem,
 } from "./types";
@@ -546,7 +550,7 @@ const TABS: { id: string; label: string; ic: React.ReactNode }[] = [
 /* ==================================================================== */
 
 export default function TradieApp({
-  seeRisk, profile, watch, alerts, jobs, reviews,
+  seeRisk, profile, watch, alerts, jobs, reviews, categoryTiles,
 }: {
   seeRisk: boolean;
   profile: TradieProfileData;
@@ -554,6 +558,7 @@ export default function TradieApp({
   alerts: TradieAlert[];
   jobs: TradieJob[];
   reviews: TradieReview[];
+  categoryTiles: TileData[];
 }) {
   const router = useRouter();
   const refresh = () => router.refresh();
@@ -563,6 +568,8 @@ export default function TradieApp({
   const [avail, setAvail] = useState(profile.availableNow);
   const [availBusy, setAvailBusy] = useState(false);
   const [jobFilter, setJobFilter] = useState<"all" | "day" | "sub">("all");
+  /* R5: compact category strip filter over the in-app job list. */
+  const [jobCat, setJobCat] = useState<string | null>(null);
 
   const burgerRef = useRef<HTMLButtonElement | null>(null);
   const dashAddRef = useRef<HTMLInputElement | null>(null);
@@ -572,7 +579,8 @@ export default function TradieApp({
   const [saved, setSaved] = useState(profile);
   const [eNm, setENm] = useState(profile.name);
   const [eSb, setESb] = useState(profile.suburb);
-  const [eTrades, setETrades] = useState<string[]>(profile.trades);
+  // R5: taxonomy category slugs are now the source of truth for the profile.
+  const [eCats, setECats] = useState<string[]>(profile.categorySlugs);
   const [eLic, setELic] = useState(profile.licenceNumber);
   const [eIns, setEIns] = useState(profile.insuranceProvider);
   const [eInsExp, setEInsExp] = useState(profile.insuranceExpiry);
@@ -581,19 +589,19 @@ export default function TradieApp({
   const [photoBusy, setPhotoBusy] = useState(false);
 
   const first = saved.name.split(/\s+/)[0] || saved.name;
-  const tradeLine = saved.trades.join(" & ");
+  // Prefer the taxonomy category labels; fall back to legacy trade names.
+  const tradeLine =
+    (saved.categorySlugs.length ? saved.categorySlugs.map(popularLabel) : saved.trades).join(" & ");
   const totalExposure = watch.reduce((a, w) => a + (w.exposureCents ?? 0), 0);
   const openAlerts = alerts.filter((a) => !a.read).length;
   const rating = saved.ratingAvg;
   const insCurrent =
     saved.insuranceExpiry !== "" && new Date(saved.insuranceExpiry) > new Date();
-  const tradeChips = useMemo(
-    () => [...new Set([...profile.trades, ...ALL_TRADES])],
-    [profile.trades],
-  );
 
-  const filteredJobs = jobs.filter((j) =>
-    jobFilter === "all" ? true : jobFilter === "day" ? j.type === "day_hire" : j.type === "subcontract",
+  const filteredJobs = jobs.filter(
+    (j) =>
+      (jobFilter === "all" ? true : jobFilter === "day" ? j.type === "day_hire" : j.type === "subcontract") &&
+      (jobCat === null || j.categorySlug === jobCat),
   );
 
   function pick(id: string) {
@@ -645,18 +653,24 @@ export default function TradieApp({
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
     setProfBusy(true);
+    // R5: categorySlugs are the source of truth; keep legacy `trades` populated
+    // from the mappable slugs (CATEGORY_TO_TRADE) so old surfaces keep working.
+    const derivedTrades = [
+      ...new Set(eCats.map((s) => CATEGORY_TO_TRADE[s]).filter((t): t is string => !!t)),
+    ];
     try {
       await api("/api/profile", "PUT", {
         name: eNm.trim(),
         suburb: eSb.trim(),
-        trades: eTrades,
+        categorySlugs: eCats,
+        trades: derivedTrades,
         licenceNumber: eLic.trim(),
         insuranceProvider: eIns.trim(),
         insuranceExpiry: eInsExp || null,
       });
       setSaved({
         ...saved,
-        name: eNm.trim(), suburb: eSb.trim(), trades: eTrades,
+        name: eNm.trim(), suburb: eSb.trim(), trades: derivedTrades, categorySlugs: eCats,
         licenceNumber: eLic.trim(), insuranceProvider: eIns.trim(), insuranceExpiry: eInsExp,
       });
       toast("Profile saved — builders now see the update");
@@ -685,9 +699,6 @@ export default function TradieApp({
       setPhotoBusy(false);
     }
   }
-
-  const toggleTrade = (t: string) =>
-    setETrades(eTrades.includes(t) ? eTrades.filter((x) => x !== t) : [...eTrades, t]);
 
   return (
     <>
@@ -932,7 +943,22 @@ export default function TradieApp({
                 Builder pay-status shown on every job — apply free.
               </span>
             </div>
-            <div className="grid2">
+            {/* R5: compact category strip filters the in-app job list. */}
+            <div className="topbar" style={{ margin: "var(--s2) 0" }}>
+              <h3 style={{ fontSize: "1rem" }}>Filter by category</h3>
+              {jobCat ? (
+                <button className="btn btn-g btn-s" onClick={() => setJobCat(null)}>
+                  Clear “{popularLabel(jobCat)}”
+                </button>
+              ) : null}
+            </div>
+            <CategoryPicker
+              tiles={categoryTiles}
+              selected={jobCat ? [jobCat] : []}
+              onToggle={(slug) => setJobCat((c) => (c === slug ? null : slug))}
+              ariaLabel="Filter jobs by category"
+            />
+            <div className="grid2" style={{ marginTop: "var(--s4)" }}>
               {filteredJobs.map((j) => <JobCard key={j.id} j={j} onApplied={refresh} />)}
               {filteredJobs.length === 0 ? (
                 <div style={{ gridColumn: "1 / -1" }}>
@@ -1007,19 +1033,15 @@ export default function TradieApp({
                 </label>
               </div>
               <div>
-                <span className="field-legend">Trades</span>
-                <div className="filters" style={{ marginBottom: 0 }}>
-                  {tradeChips.map((t) => (
-                    <button
-                      key={t} type="button"
-                      className={"chip" + (eTrades.includes(t) ? " on" : "")}
-                      onClick={() => toggleTrade(t)}
-                      aria-pressed={eTrades.includes(t)}
-                    >
-                      {t}
-                    </button>
-                  ))}
-                </div>
+                <CategorySearchPicker
+                  label="Trades & categories"
+                  value={eCats}
+                  onChange={(slugs) => setECats(slugs)}
+                />
+                <p className="hint" style={{ marginTop: ".4rem" }}>
+                  Your first pick is your primary trade — builders searching that category see you
+                  first.
+                </p>
               </div>
               <div className="f2">
                 <label>
