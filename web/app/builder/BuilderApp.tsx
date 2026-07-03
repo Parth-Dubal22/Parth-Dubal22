@@ -1,12 +1,15 @@
 "use client";
 /** Builder app shell — ported 1:1 from site/app-builder.html.
  *  Panels: Overview · Post a job · My jobs & applicants · Profile & verification · Reviews.
- *  All mutations go through the API routes (see API_CONTRACT.md). */
-import { useState } from "react";
+ *  All mutations go through the API routes (see API_CONTRACT.md).
+ *  R2: per-action busy keys (no global freeze), token-clean styles, EmptyState
+ *  zero-states, error-kind toasts on every mutation failure. */
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "@/components/Toast";
 import Stars from "@/components/Stars";
+import EmptyState from "@/components/EmptyState";
 import { ALL_TRADES } from "@/lib/format";
 
 export type Pill = { label: string; cls: string };
@@ -62,6 +65,39 @@ export type BuilderVM = {
 const CHECK = (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
     <path d="M20 6L9 17l-5-5" />
+  </svg>
+);
+
+/* 12px check for inline pill status (replaces the "✓" glyph) */
+const CHECK_S = (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" aria-hidden="true">
+    <path d="M20 6L9 17l-5-5" />
+  </svg>
+);
+
+/* 14px star for rating figures (replaces the "★" glyph) */
+const STAR = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--star)" aria-hidden="true">
+    <path d="M12 17.3l-5.9 3.5 1.5-6.7L2.5 9.6l6.8-.6L12 2.7l2.7 6.3 6.8.6-5.1 4.5 1.5 6.7z" />
+  </svg>
+);
+
+/* 16px plus for add actions (replaces the "＋" glyph) */
+const PLUS = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <path d="M12 5v14M5 12h14" />
+  </svg>
+);
+
+/* 14px direction arrows for the watch headings (replace "↑"/"↓" text arrows) */
+const ARROW_UP = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 19V5M5 12l7-7 7 7" />
+  </svg>
+);
+const ARROW_DOWN = (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M12 5v14M19 12l-7 7-7-7" />
   </svg>
 );
 
@@ -166,7 +202,31 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
   const router = useRouter();
   const [tab, setTab] = useState("b-dash");
   const [sideOpen, setSideOpen] = useState(false);
-  const [busy, setBusy] = useState(false);
+  const burgerRef = useRef<HTMLButtonElement | null>(null);
+
+  /* Per-action busy keys (MASTER §4): one in-flight mutation never freezes
+   * another action's button; double-submit stays guarded per key. */
+  const [busyMap, setBusyMap] = useState<Record<string, boolean>>({});
+  const isBusy = (key: string) => Boolean(busyMap[key]);
+  async function withBusy(key: string, fn: () => Promise<void>) {
+    if (busyMap[key]) return; // double-submit guard, scoped to this action
+    setBusyMap((b) => ({ ...b, [key]: true }));
+    try {
+      await fn();
+    } finally {
+      setBusyMap((b) => {
+        const next = { ...b };
+        delete next[key];
+        return next;
+      });
+    }
+  }
+  /** Busy props for the button that fires `key` (spinner + disabled + aria-busy). */
+  const busyBtn = (key: string, base: string) => ({
+    className: `${base}${isBusy(key) ? " busy" : ""}`,
+    disabled: isBusy(key),
+    "aria-busy": isBusy(key) || undefined,
+  });
 
   function go(id: string) {
     setTab(id);
@@ -174,31 +234,54 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
     window.scrollTo({ top: 0 });
   }
 
+  function closeSide() {
+    setSideOpen(false);
+    burgerRef.current?.focus();
+  }
+
+  /* Mobile drawer contract (MASTER §7): Escape closes, body scroll locked, focus returns to burger. */
+  useEffect(() => {
+    if (!sideOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSideOpen(false);
+        burgerRef.current?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [sideOpen]);
+
   /* ---- post a job → POST /api/jobs ---- */
   async function submitJob(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
-    setBusy(true);
-    const d = await api("/api/jobs", "POST", {
-      title: String(fd.get("title") ?? "").trim(),
-      type: String(fd.get("type")) === "Subcontract package" ? "subcontract" : "day_hire",
-      rate: String(fd.get("rate") ?? "").trim(),
-      location: String(fd.get("location") ?? "").trim(),
-      startText: String(fd.get("start") ?? "").trim(),
-      duration: String(fd.get("duration") ?? "").trim() || "—",
-      requirement: String(fd.get("requirement") ?? "").trim() || undefined,
-      trade: String(fd.get("trade") ?? "").trim() || undefined,
+    await withBusy("job:post", async () => {
+      const d = await api("/api/jobs", "POST", {
+        title: String(fd.get("title") ?? "").trim(),
+        type: String(fd.get("type")) === "Subcontract package" ? "subcontract" : "day_hire",
+        rate: String(fd.get("rate") ?? "").trim(),
+        location: String(fd.get("location") ?? "").trim(),
+        startText: String(fd.get("start") ?? "").trim(),
+        duration: String(fd.get("duration") ?? "").trim() || "—",
+        requirement: String(fd.get("requirement") ?? "").trim() || undefined,
+        trade: String(fd.get("trade") ?? "").trim() || undefined,
+      });
+      if (d.ok) {
+        form.reset();
+        toast(`Job published — live on the tradie board with your ${vm.statusLabel} status`);
+        router.refresh();
+        go("b-jobs");
+      } else {
+        toast(d.error || "Could not publish the job", { kind: "error" });
+      }
     });
-    setBusy(false);
-    if (d.ok) {
-      form.reset();
-      toast(`Job published — live on the tradie board with your ${vm.statusLabel} status`);
-      router.refresh();
-      go("b-jobs");
-    } else {
-      toast(d.error || "Could not publish the job");
-    }
   }
 
   /* ---- upward watchlist (clients/developers) → /api/watchlist kind:'client' ---- */
@@ -208,94 +291,94 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
     const q = String(new FormData(form).get("q") ?? "").trim();
     if (!q) return;
     const digits = q.replace(/\D/g, "");
-    setBusy(true);
-    const d = await api(
-      "/api/watchlist",
-      "POST",
-      digits.length === 11 ? { abn: digits, kind: "client" } : { name: q, kind: "client" },
-    );
-    setBusy(false);
-    if (d.ok) {
-      form.reset();
-      toast(`${q} added to your watchlist — monitoring public records from now on`);
-      router.refresh();
-    } else {
-      toast(d.error || "Could not add to your watchlist");
-    }
+    await withBusy("watch:add", async () => {
+      const d = await api(
+        "/api/watchlist",
+        "POST",
+        digits.length === 11 ? { abn: digits, kind: "client" } : { name: q, kind: "client" },
+      );
+      if (d.ok) {
+        form.reset();
+        toast(`${q} added to your watchlist — monitoring public records from now on`);
+        router.refresh();
+      } else {
+        toast(d.error || "Could not add to your watchlist", { kind: "error" });
+      }
+    });
   }
 
   async function removeWatch(companyId: number, name: string) {
-    setBusy(true);
-    const d = await api(`/api/watchlist?companyId=${companyId}`, "DELETE");
-    setBusy(false);
-    if (d.ok) {
-      toast(`${name} removed from your watchlist`);
-      router.refresh();
-    } else {
-      toast(d.error || "Could not remove from your watchlist");
-    }
+    await withBusy(`watch:${companyId}`, async () => {
+      const d = await api(`/api/watchlist?companyId=${companyId}`, "DELETE");
+      if (d.ok) {
+        toast(`${name} removed from your watchlist`);
+        router.refresh();
+      } else {
+        toast(d.error || "Could not remove from your watchlist", { kind: "error" });
+      }
+    });
   }
 
   /* ---- Builder Pro upsell (only when risk detail is locked) ---- */
   async function upgrade() {
-    setBusy(true);
-    const d = await api("/api/billing/checkout", "POST", { plan: "builder_pro" });
-    setBusy(false);
-    if (d.ok && typeof d.url === "string" && d.url) {
-      window.location.href = d.url;
-    } else if (d.ok) {
-      toast("Builder Pro active — no lock-in, cancel anytime");
-      router.refresh();
-    } else {
-      toast(d.error || "Could not start checkout");
-    }
+    await withBusy("billing:upgrade", async () => {
+      const d = await api("/api/billing/checkout", "POST", { plan: "builder_pro" });
+      if (d.ok && typeof d.url === "string" && d.url) {
+        window.location.href = d.url;
+      } else if (d.ok) {
+        toast("Builder Pro active — no lock-in, cancel anytime");
+        router.refresh();
+      } else {
+        toast(d.error || "Could not start checkout", { kind: "error" });
+      }
+    });
   }
 
   /* ---- verification apply → POST /api/builder/verification-request ---- */
   async function applyTier(tier: string) {
-    setBusy(true);
-    const d = await api("/api/builder/verification-request", "POST", { tier });
-    setBusy(false);
-    if (d.ok) {
-      toast("Application submitted — reviewed against the published criteria, badge re-checked monthly");
-      router.refresh();
-    } else {
-      toast(d.error || "Could not submit the application");
-    }
+    await withBusy(`tier:${tier}`, async () => {
+      const d = await api("/api/builder/verification-request", "POST", { tier });
+      if (d.ok) {
+        toast("Application submitted — reviewed against the published criteria, badge re-checked monthly");
+        router.refresh();
+      } else {
+        toast(d.error || "Could not submit the application", { kind: "error" });
+      }
+    });
   }
 
   /* ---- accept an applicant → status 'contacted' + add to subbie panel ---- */
   async function acceptApplicant(appId: number, name: string) {
-    setBusy(true);
-    const d = await api(`/api/applications/${appId}`, "POST", { action: "accept" });
-    setBusy(false);
-    if (d.ok) {
-      toast(`${name} accepted — contact details unlocked and added to your subbie panel`);
-      router.refresh();
-    } else {
-      toast(d.error || "Could not accept the applicant");
-    }
+    await withBusy(`applicant:${appId}`, async () => {
+      const d = await api(`/api/applications/${appId}`, "POST", { action: "accept" });
+      if (d.ok) {
+        toast(`${name} accepted — contact details unlocked and added to your subbie panel`);
+        router.refresh();
+      } else {
+        toast(d.error || "Could not accept the applicant", { kind: "error" });
+      }
+    });
   }
 
   /* ---- builder → tradie review → POST /api/reviews (subjectUserId) ---- */
   const [reviewFor, setReviewFor] = useState<number | null>(null);
-  async function submitTradieReview(e: React.FormEvent<HTMLFormElement>, tradieUserId: number, name: string) {
+  async function submitTradieReview(e: React.FormEvent<HTMLFormElement>, appId: number, tradieUserId: number, name: string) {
     e.preventDefault();
     const form = e.currentTarget;
     const fd = new FormData(form);
     const rating = Number(fd.get("rating"));
     const text = String(fd.get("text") ?? "").trim();
     if (!text) return;
-    setBusy(true);
-    const d = await api("/api/reviews", "POST", { subjectUserId: tradieUserId, rating, text, authorRole: "builder" });
-    setBusy(false);
-    if (d.ok) {
-      setReviewFor(null);
-      toast(`Review posted for ${name}`);
-      router.refresh();
-    } else {
-      toast(d.error || "Could not post the review");
-    }
+    await withBusy(`review:${appId}`, async () => {
+      const d = await api("/api/reviews", "POST", { subjectUserId: tradieUserId, rating, text, authorRole: "builder" });
+      if (d.ok) {
+        setReviewFor(null);
+        toast(`Review posted for ${name}`);
+        router.refresh();
+      } else {
+        toast(d.error || "Could not post the review", { kind: "error" });
+      }
+    });
   }
 
   /* ---- reply publicly → POST /api/reviews/[id]/reply ---- */
@@ -304,16 +387,16 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
     const form = e.currentTarget;
     const reply = String(new FormData(form).get("reply") ?? "").trim();
     if (!reply) return;
-    setBusy(true);
-    const d = await api(`/api/reviews/${id}/reply`, "POST", { reply });
-    setBusy(false);
-    if (d.ok) {
-      form.reset();
-      toast("Reply posted publicly under the review");
-      router.refresh();
-    } else {
-      toast(d.error || "Could not post the reply");
-    }
+    await withBusy(`reply:${id}`, async () => {
+      const d = await api(`/api/reviews/${id}/reply`, "POST", { reply });
+      if (d.ok) {
+        form.reset();
+        toast("Reply posted publicly under the review");
+        router.refresh();
+      } else {
+        toast(d.error || "Could not post the reply", { kind: "error" });
+      }
+    });
   }
 
   function tierPill(n: number, key: string): Pill {
@@ -329,23 +412,24 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
       <div className="appbar">
         <button
           id="appburger"
+          ref={burgerRef}
           className="burger"
-          style={{ display: "flex" }}
           aria-label="Menu"
           aria-expanded={sideOpen}
           onClick={() => setSideOpen((o) => !o)}
         >
-          <span style={{ background: "#fff" }}></span>
-          <span style={{ background: "#fff" }}></span>
-          <span style={{ background: "#fff" }}></span>
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
-        <b style={{ fontFamily: "var(--fd)" }}>BuildSafe · Builder</b>
-        <Link href="/" className="mono" style={{ fontSize: ".62rem", color: "#9DB0CC" }}>
+        <b>BuildSafe · Builder</b>
+        <Link href="/" className="exit">
           EXIT
         </Link>
       </div>
 
       <div className="app">
+        {sideOpen && <button className="side-scrim" aria-label="Close menu" onClick={closeSide} />}
         <aside className={`side${sideOpen ? " open" : ""}`}>
           <Link className="logo" href="/">
             <span className="logo-mark">
@@ -357,13 +441,13 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
           </Link>
           <span className="role">BUILDER APP</span>
           {TABS.map((t) => (
-            <button key={t.id} className={`sbtn${tab === t.id ? " on" : ""}`} onClick={() => go(t.id)} aria-current={tab === t.id}>
+            <button key={t.id} className={`sbtn${tab === t.id ? " on" : ""}`} onClick={() => go(t.id)} aria-current={tab === t.id ? "page" : undefined}>
               {t.icon}
               {t.label}
             </button>
           ))}
           <div className="me">
-            <span className="avatar" style={{ background: "#2E5E8F" }}>{vm.companyInitials}</span>
+            <span className="avatar" style={{ background: "var(--av-1)" }}>{vm.companyInitials}</span>
             <div>
               <b>{vm.companyName}</b>
               <span>{vm.licenceLine}</span>
@@ -390,7 +474,7 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
               </div>
               <div className="kpi">
                 <small>Profile rating</small>
-                <b>{vm.ratingText} ★</b>
+                <b>{vm.ratingText} {STAR}</b>
               </div>
               <div className="kpi">
                 <small>Open job posts</small>
@@ -401,128 +485,146 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                 <b id="bk-apps">{vm.kpis.newApplicants}</b>
               </div>
             </div>
-            <div className="grid2">
-              <div className="card">
-                <h3>Watching your clients ↑</h3>
-                <p>{vm.clientsIntro}</p>
-                <div className="list" style={{ marginTop: ".9rem" }}>
-                  {vm.clients.map((c) => (
-                    <div
-                      key={c.companyId}
-                      className={`item${c.pill?.cls === "risk" ? " alertcard" : c.pill?.cls === "watch" ? " alertcard w" : ""}`}
-                      style={{ boxShadow: "none" }}
-                    >
-                      <span className="avatar" style={{ background: c.avatarBg }}>{c.initials}</span>
-                      <div className="grow">
-                        <b>{c.name}</b>
-                        <span className="sub2">{c.sub2}</span>
-                        {c.src && (
-                          <div className="srcline">
-                            New: {c.src.title} —{" "}
-                            {c.src.url ? (
-                              <a href={c.src.url} target="_blank" rel="noreferrer">
-                                {c.src.name} · {c.src.date}
-                              </a>
-                            ) : (
-                              <span>
-                                {c.src.name} · {c.src.date}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      {c.pill && <span className={`pill ${c.pill.cls}`}>{c.pill.label}</span>}
-                      <button
-                        className="btn btn-g btn-s"
-                        onClick={() => removeWatch(c.companyId, c.name)}
-                        aria-label={`Stop watching ${c.name}`}
-                        disabled={busy}
+            <div className="stack">
+              <div className="grid2">
+                <div className="card">
+                  <h3>Watching your clients {ARROW_UP}</h3>
+                  <p>{vm.clientsIntro}</p>
+                  <div className="list" style={{ marginTop: ".9rem" }}>
+                    {vm.clients.map((c) => (
+                      <div
+                        key={c.companyId}
+                        className={`item flat${c.pill?.cls === "risk" ? " alertcard" : c.pill?.cls === "watch" ? " alertcard w" : ""}`}
                       >
-                        Remove
+                        <span className="avatar" style={{ background: c.avatarBg }}>{c.initials}</span>
+                        <div className="grow">
+                          <b>{c.name}</b>
+                          <span className="sub2">{c.sub2}</span>
+                          {c.src && (
+                            <div className="srcline">
+                              New: {c.src.title} —{" "}
+                              {c.src.url ? (
+                                <a href={c.src.url} target="_blank" rel="noreferrer">
+                                  {c.src.name} · {c.src.date}
+                                </a>
+                              ) : (
+                                <span>
+                                  {c.src.name} · {c.src.date}
+                                </span>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        {c.pill && <span className={`pill ${c.pill.cls}`}>{c.pill.label}</span>}
+                        <button
+                          {...busyBtn(`watch:${c.companyId}`, "btn btn-g btn-s")}
+                          onClick={() => removeWatch(c.companyId, c.name)}
+                          aria-label={`Stop watching ${c.name}`}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                    {vm.clients.length === 0 && (
+                      <EmptyState
+                        headline="No clients watched yet"
+                        body="Add the developers and clients you build for below — monitoring runs continuously."
+                      />
+                    )}
+                  </div>
+                  {vm.clients.some((c) => c.pill?.cls === "risk") && (
+                    <button
+                      className="btn btn-g btn-s"
+                      style={{ marginTop: ".9rem" }}
+                      onClick={() => toast("Demo: tighten terms — invoice weekly, pause variations, get advice")}
+                    >
+                      What can I do? →
+                    </button>
+                  )}
+                  {!vm.canSee && (
+                    <div style={{ marginTop: ".9rem" }}>
+                      <div className="hint">
+                        Risk detail on watched companies (signals, status, exposure) is private to subscribers. Builder Pro is
+                        $99/mo — no lock-in, cancel anytime.
+                      </div>
+                      <button {...busyBtn("billing:upgrade", "btn btn-p btn-s")} style={{ marginTop: ".6rem" }} onClick={upgrade}>
+                        Unlock risk alerts →
                       </button>
                     </div>
-                  ))}
-                  {vm.clients.length === 0 && (
-                    <p className="hint">No clients watched yet — add the developers and clients you build for below.</p>
                   )}
-                </div>
-                {vm.clients.some((c) => c.pill?.cls === "risk") && (
-                  <button
-                    className="btn btn-g btn-s"
-                    style={{ marginTop: ".9rem" }}
-                    onClick={() => toast("Demo: tighten terms — invoice weekly, pause variations, get advice")}
-                  >
-                    What can I do? →
-                  </button>
-                )}
-                {!vm.canSee && (
-                  <div style={{ marginTop: ".9rem" }}>
-                    <div className="hint">
-                      Risk detail on watched companies (signals, status, exposure) is private to subscribers. Builder Pro is
-                      $99/mo — no lock-in, cancel anytime.
+                  <form className="form" style={{ marginTop: ".9rem" }} onSubmit={addClientWatch}>
+                    <label>
+                      Add a developer / client
+                      <input type="text" name="q" placeholder="Company name or ABN" />
+                    </label>
+                    <div className="actions">
+                      <button {...busyBtn("watch:add", "btn btn-g btn-s")}>
+                        {PLUS} Watch
+                      </button>
                     </div>
-                    <button className="btn btn-p btn-s" style={{ marginTop: ".6rem" }} onClick={upgrade} disabled={busy}>
-                      Unlock risk alerts →
-                    </button>
+                  </form>
+                </div>
+                <div className="card">
+                  <h3>Watching your subbie panel {ARROW_DOWN}</h3>
+                  <p>Licences &amp; insurance auto-tracked so nothing lapses mid-project:</p>
+                  <div className="list" style={{ marginTop: ".9rem" }}>
+                    {vm.subbies.map((s) => (
+                      <div key={s.id} className="item flat">
+                        <span className="avatar" style={{ background: s.avatarBg }}>{s.initials}</span>
+                        <div className="grow">
+                          <b>{s.name}</b>
+                          <span className="sub2">{s.sub2}</span>
+                        </div>
+                        <span className={`pill ${s.pill.cls}`}>{s.pill.label}</span>
+                      </div>
+                    ))}
+                    {vm.subbies.length === 0 && (
+                      <EmptyState
+                        headline="No subbies on your panel yet"
+                        body="They're added automatically when you accept applicants."
+                        cta={
+                          <button className="btn btn-g btn-s" onClick={() => go("b-jobs")}>
+                            Review applicants →
+                          </button>
+                        }
+                      />
+                    )}
                   </div>
-                )}
-                <form className="form" style={{ marginTop: ".9rem" }} onSubmit={addClientWatch}>
-                  <label>
-                    Add a developer / client
-                    <input type="text" name="q" placeholder="Company name or ABN" />
-                  </label>
-                  <button className="btn btn-g btn-s" style={{ justifySelf: "start" }} disabled={busy}>
-                    ＋ Watch
-                  </button>
-                </form>
+                </div>
               </div>
               <div className="card">
-                <h3>Watching your subbie panel ↓</h3>
-                <p>Licences &amp; insurance auto-tracked so nothing lapses mid-project:</p>
+                <h3>Your company health</h3>
+                <p>
+                  Your own view of what BuildSafe monitors against ABN {vm.abnFormatted} — facts from public records, every
+                  signal cites its source. Licence {vm.licenceLine} · {vm.licenceStatus} · last checked {vm.lastChecked}.
+                </p>
                 <div className="list" style={{ marginTop: ".9rem" }}>
-                  {vm.subbies.map((s) => (
-                    <div key={s.id} className="item" style={{ boxShadow: "none" }}>
-                      <span className="avatar" style={{ background: s.avatarBg }}>{s.initials}</span>
+                  {vm.ownSignals.map((s) => (
+                    <div key={s.id} className="item flat">
                       <div className="grow">
-                        <b>{s.name}</b>
-                        <span className="sub2">{s.sub2}</span>
+                        <b>{s.title}</b>
+                        <span className="sub2">{s.date}</span>
+                        <div className="srcline">
+                          Source:{" "}
+                          {s.sourceUrl ? (
+                            <a href={s.sourceUrl} target="_blank" rel="noreferrer">
+                              {s.sourceName}
+                            </a>
+                          ) : (
+                            s.sourceName
+                          )}
+                        </div>
                       </div>
                       <span className={`pill ${s.pill.cls}`}>{s.pill.label}</span>
                     </div>
                   ))}
-                  {vm.subbies.length === 0 && (
-                    <p className="hint">No subbies on your panel yet — they&apos;re added automatically when you accept applicants.</p>
+                  {vm.ownSignals.length === 0 && (
+                    <EmptyState
+                      headline="No signals on record"
+                      body="No approved signals on record for your ABN."
+                    />
                   )}
                 </div>
-              </div>
-            </div>
-            <div className="card" style={{ marginTop: "1.3rem" }}>
-              <h3>Your company health</h3>
-              <p>
-                Your own view of what BuildSafe monitors against ABN {vm.abnFormatted} — facts from public records, every
-                signal cites its source. Licence {vm.licenceLine} · {vm.licenceStatus} · last checked {vm.lastChecked}.
-              </p>
-              <div className="list" style={{ marginTop: ".9rem" }}>
-                {vm.ownSignals.map((s) => (
-                  <div key={s.id} className="item" style={{ boxShadow: "none" }}>
-                    <div className="grow">
-                      <b>{s.title}</b>
-                      <span className="sub2">{s.date}</span>
-                      <div className="srcline">
-                        Source:{" "}
-                        {s.sourceUrl ? (
-                          <a href={s.sourceUrl} target="_blank" rel="noreferrer">
-                            {s.sourceName}
-                          </a>
-                        ) : (
-                          s.sourceName
-                        )}
-                      </div>
-                    </div>
-                    <span className={`pill ${s.pill.cls}`}>{s.pill.label}</span>
-                  </div>
-                ))}
-                {vm.ownSignals.length === 0 && <p className="hint">No approved signals on record for your ABN.</p>}
               </div>
             </div>
           </div>
@@ -533,89 +635,89 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
               <h2>Post a job</h2>
               <span className="hint">Flat fee per post at launch — never per lead</span>
             </div>
-            {vm.availableTradies.length > 0 && (
-              <div className="card" style={{ padding: "1.2rem", maxWidth: 760, marginBottom: "1.2rem" }}>
-                <b style={{ fontFamily: "var(--fd)" }}>
-                  Available now{" "}
-                  <span className="pill ok" style={{ verticalAlign: "middle" }}>
-                    {vm.availableTradies.length} ready for day work
-                  </span>
-                </b>
-                <p className="hint" style={{ margin: ".2rem 0 .8rem" }}>
-                  Tradies who flipped on their Available Now toggle. Post a day-hire job and they can one-tap apply.
-                </p>
-                <div className="list">
-                  {vm.availableTradies.map((t, i) => (
-                    <div key={i} className="item" style={{ boxShadow: "none" }}>
-                      <span className="avatar" style={{ background: "var(--orange)" }}>{t.initials}</span>
-                      <div className="grow">
-                        <b>{t.name}</b>
-                        <span className="sub2">{t.sub2}</span>
+            <div className="stack">
+              {vm.availableTradies.length > 0 && (
+                <div className="card wrap-narrow">
+                  <h3>
+                    Available now{" "}
+                    <span className="pill ok">{vm.availableTradies.length} ready for day work</span>
+                  </h3>
+                  <p className="hint" style={{ margin: ".2rem 0 .8rem" }}>
+                    Tradies who flipped on their Available Now toggle. Post a day-hire job and they can one-tap apply.
+                  </p>
+                  <div className="list">
+                    {vm.availableTradies.map((t, i) => (
+                      <div key={i} className="item flat">
+                        <span className="avatar" style={{ background: "var(--orange)" }}>{t.initials}</span>
+                        <div className="grow">
+                          <b>{t.name}</b>
+                          <span className="sub2">{t.sub2}</span>
+                        </div>
+                        <span className="pill ok">AVAILABLE</span>
                       </div>
-                      <span className="pill ok">AVAILABLE</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <form className="form card" id="post-form" style={{ padding: "1.6rem", maxWidth: 760 }} onSubmit={submitJob}>
-              <label>
-                Job title
-                <input type="text" name="title" placeholder="e.g. Wall & floor tiler — 3 bathrooms" required />
-              </label>
-              <div className="f2">
-                <label>
-                  Type
-                  <select name="type" defaultValue="Day hire">
-                    <option>Day hire</option>
-                    <option>Subcontract package</option>
-                  </select>
-                </label>
-                <label>
-                  Rate / value
-                  <input type="text" name="rate" placeholder="e.g. $620/day or $8,400 quote" required />
-                </label>
-              </div>
-              <div className="f2">
-                <label>
-                  Location
-                  <input type="text" name="location" placeholder="Suburb, state" required />
-                </label>
-                <label>
-                  Start
-                  <input type="text" name="start" placeholder="e.g. Monday / This week" required />
-                </label>
-              </div>
-              <div className="f2">
-                <label>
-                  Duration
-                  <input type="text" name="duration" placeholder="e.g. 3 days / 2 weeks" />
-                </label>
-                <label>
-                  Trade
-                  <select name="trade" defaultValue="">
-                    <option value="">Select a trade…</option>
-                    {ALL_TRADES.map((t) => (
-                      <option key={t} value={t}>{t}</option>
                     ))}
-                  </select>
+                  </div>
+                </div>
+              )}
+              <form className="form card wrap-narrow" id="post-form" onSubmit={submitJob}>
+                <label>
+                  Job title
+                  <input type="text" name="title" placeholder="e.g. Wall & floor tiler — 3 bathrooms" required />
                 </label>
-              </div>
-              <label>
-                Requirements
-                <input type="text" name="requirement" placeholder="e.g. Own tools, white card" />
-              </label>
-              <div className="hint">
-                Your BuildSafe status (
-                <span className={`pill ${vm.statusCls}`} style={{ verticalAlign: "middle" }}>
-                  {vm.statusLabel}
-                </span>
-                ) is shown on the post automatically — that&rsquo;s why good tradies answer fast.
-              </div>
-              <button className="btn btn-p btn-lg" style={{ justifySelf: "start" }} disabled={busy}>
-                Publish job →
-              </button>
-            </form>
+                <div className="f2">
+                  <label>
+                    Type
+                    <select name="type" defaultValue="Day hire">
+                      <option>Day hire</option>
+                      <option>Subcontract package</option>
+                    </select>
+                  </label>
+                  <label>
+                    Rate / value
+                    <input type="text" name="rate" placeholder="e.g. $620/day or $8,400 quote" required />
+                  </label>
+                </div>
+                <div className="f2">
+                  <label>
+                    Location
+                    <input type="text" name="location" placeholder="Suburb, state" required />
+                  </label>
+                  <label>
+                    Start
+                    <input type="text" name="start" placeholder="e.g. Monday / This week" required />
+                  </label>
+                </div>
+                <div className="f2">
+                  <label>
+                    Duration
+                    <input type="text" name="duration" placeholder="e.g. 3 days / 2 weeks" />
+                  </label>
+                  <label>
+                    Trade
+                    <select name="trade" defaultValue="">
+                      <option value="">Select a trade…</option>
+                      {ALL_TRADES.map((t) => (
+                        <option key={t} value={t}>{t}</option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Requirements
+                  <input type="text" name="requirement" placeholder="e.g. Own tools, white card" />
+                </label>
+                <div className="hint">
+                  Your BuildSafe status (
+                  <span className={`pill ${vm.statusCls}`}>{vm.statusLabel}</span>
+                  ) is shown on the post automatically — that&rsquo;s why good tradies answer fast.
+                </div>
+                <div className="actions">
+                  <button {...busyBtn("job:post", "btn btn-p btn-lg")}>
+                    Publish job →
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
 
           {/* MY JOBS */}
@@ -638,23 +740,22 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                     </div>
                     <span className="rate">{j.rate}</span>
                   </div>
-                  <div style={{ marginTop: "1rem" }}>
-                    <b style={{ fontSize: ".8rem", color: "var(--slate)" }}>APPLICANTS ({j.apps.length})</b>
+                  <div style={{ marginTop: "var(--s4)" }}>
+                    <span className="mini-h">APPLICANTS ({j.apps.length})</span>
                     <div className="list" style={{ marginTop: ".6rem" }}>
                       {j.apps.map((a) => (
                         <div key={a.id}>
-                          <div className="item" style={{ boxShadow: "none" }}>
-                            <span className="avatar" style={{ background: "#2E5E8F" }}>{a.initials}</span>
+                          <div className="item flat">
+                            <span className="avatar" style={{ background: "var(--av-1)" }}>{a.initials}</span>
                             <div className="grow">
                               <b>{a.name}</b>
                               <span className="sub2">{a.sub2}</span>
                             </div>
                             {a.status === "contacted" ? (
-                              <span className="pill ok">Accepted ✓</span>
+                              <span className="pill ok">Accepted {CHECK_S}</span>
                             ) : (
                               <button
-                                className="btn btn-p btn-s"
-                                disabled={busy}
+                                {...busyBtn(`applicant:${a.id}`, "btn btn-p btn-s")}
                                 onClick={() => acceptApplicant(a.id, a.name)}
                               >
                                 Accept
@@ -669,9 +770,9 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                           </div>
                           {reviewFor === a.id && (
                             <form
-                              className="form card"
-                              style={{ padding: "1rem", margin: ".4rem 0 .2rem" }}
-                              onSubmit={(e) => submitTradieReview(e, a.tradieUserId, a.name)}
+                              className="form card flat"
+                              style={{ marginTop: "var(--s2)" }}
+                              onSubmit={(e) => submitTradieReview(e, a.id, a.tradieUserId, a.name)}
                             >
                               <label>
                                 Rating
@@ -688,25 +789,35 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                                 <span className="hint">— turned up, on time, quality, rehire?</span>
                                 <textarea name="text" placeholder="Reliable, tidy work, would rehire…" required />
                               </label>
-                              <button className="btn btn-d btn-s" style={{ justifySelf: "start" }} disabled={busy}>
-                                Post review
-                              </button>
+                              <div className="actions">
+                                <button {...busyBtn(`review:${a.id}`, "btn btn-d btn-s")}>
+                                  Post review
+                                </button>
+                              </div>
                             </form>
                           )}
                         </div>
                       ))}
-                      {j.apps.length === 0 && <p className="hint">No applicants yet — verified tradies apply free, zero lead fees.</p>}
+                      {j.apps.length === 0 && (
+                        <EmptyState
+                          headline="No applicants yet"
+                          body="Verified tradies apply free — zero lead fees, ever."
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
               ))}
               {vm.jobs.length === 0 && (
-                <div className="card">
-                  <p>No jobs posted yet. Post your first — tradies apply free, and your BuildSafe status answers &ldquo;will I get paid?&rdquo; upfront.</p>
-                  <button className="btn btn-p btn-s" style={{ marginTop: ".8rem" }} onClick={() => go("b-post")}>
-                    Post a job →
-                  </button>
-                </div>
+                <EmptyState
+                  headline="No jobs posted yet"
+                  body={<>Post your first — tradies apply free, and your BuildSafe status answers &ldquo;will I get paid?&rdquo; upfront.</>}
+                  cta={
+                    <button className="btn btn-p" onClick={() => go("b-post")}>
+                      Post a job →
+                    </button>
+                  }
+                />
               )}
             </div>
           </div>
@@ -719,88 +830,91 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                 View public profile →
               </Link>
             </div>
-            <div className="phead" style={{ marginBottom: "1.4rem" }}>
-              <span className="avatar av-lg" style={{ background: "#2E5E8F" }}>{vm.companyInitials}</span>
-              <div className="grow">
-                <h3 style={{ fontSize: "1.3rem" }}>{vm.companyName}</h3>
-                <div className="mono" style={{ fontSize: ".66rem", color: "var(--slate2)" }}>
-                  ABN {vm.abnFormatted} · {vm.licenceLine} · {vm.locationLine}
+            <div className="stack">
+              <div className="phead">
+                <span className="avatar av-lg" style={{ background: "var(--av-1)" }}>{vm.companyInitials}</span>
+                <div className="grow">
+                  <h3>{vm.companyName}</h3>
+                  <div className="micro">
+                    ABN {vm.abnFormatted} · {vm.licenceLine} · {vm.locationLine}
+                  </div>
+                  <div className="pstats">
+                    <div>
+                      <b>{vm.ratingText} {STAR}</b>
+                      <span>{vm.reviewCount} reviews</span>
+                    </div>
+                    <div>
+                      <b>{vm.tierRank > 0 ? `Tier ${vm.tierRank}` : "—"}</b>
+                      <span>verification</span>
+                    </div>
+                    <div>
+                      <b>{vm.paySummary.b}</b>
+                      <span>{vm.paySummary.s}</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="pstats">
-                  <div>
-                    <b>{vm.ratingText} ★</b>
-                    <span>{vm.reviewCount} reviews</span>
-                  </div>
-                  <div>
-                    <b>{vm.tierRank > 0 ? `Tier ${vm.tierRank}` : "—"}</b>
-                    <span>verification</span>
-                  </div>
-                  <div>
-                    <b>{vm.paySummary.b}</b>
-                    <span>{vm.paySummary.s}</span>
-                  </div>
-                </div>
+                {vm.tier !== "none" ? (
+                  <span className="vbadge">
+                    {CHECK}
+                    Verified
+                  </span>
+                ) : (
+                  <span className="pill navy">NOT YET VERIFIED</span>
+                )}
               </div>
-              {vm.tier !== "none" ? (
-                <span className="vbadge">
-                  {CHECK}
-                  Verified
-                </span>
-              ) : (
-                <span className="pill navy">NOT YET VERIFIED</span>
-              )}
-            </div>
-            <div className="grid3">
-              {TIER_CARDS.map((t) => {
-                const pill = tierPill(t.n, t.key);
-                const canApply = vm.tierRank < t.n && !vm.pendingTiers.includes(t.key);
-                return (
-                  <div key={t.key} className="card" style={vm.tierRank === t.n ? { borderColor: "var(--clear)" } : undefined}>
-                    <span className={`pill ${pill.cls}`}>{pill.label}</span>
-                    <h3 style={{ marginTop: ".7rem" }}>{t.title}</h3>
-                    {t.key === "id_verified" && <p>ABN matched, licence confirmed with VBA, details validated.</p>}
-                    {t.key === "buildsafe_verified" && (
-                      <p>
-                        Insurance confirmed, 12 months of clean public records, re-checked monthly. Badge live on your
-                        profile &amp; job posts.
-                      </p>
-                    )}
-                    {t.key === "track_record" && (
-                      <p>
-                        Needs 50 verified reviews incl. subbie payment ratings. You have {vm.reviewCount}.
-                      </p>
-                    )}
-                    <ul className="hint" style={{ margin: ".6rem 0 0", paddingLeft: "1.1rem", display: "grid", gap: ".25rem" }}>
-                      {t.criteria.map((c) => (
-                        <li key={c}>{c}</li>
-                      ))}
-                    </ul>
-                    {t.key === "track_record" && vm.reviewCount < 50 && (
-                      <button
-                        className="btn btn-p btn-s"
-                        style={{ marginTop: ".8rem" }}
-                        onClick={() => toast("Review invites sent to your last 9 completed jobs")}
-                      >
-                        Request reviews →
-                      </button>
-                    )}
-                    {canApply && (
-                      <button
-                        className={`btn ${t.key === "track_record" ? "btn-g" : "btn-p"} btn-s`}
-                        style={{ marginTop: ".8rem", marginLeft: t.key === "track_record" && vm.reviewCount < 50 ? ".5rem" : undefined }}
-                        onClick={() => applyTier(t.key)}
-                        disabled={busy}
-                      >
-                        Apply for Tier {t.n} →
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="hint" style={{ marginTop: "1rem" }}>
-              Criteria are published for every tier. Badges are re-checked monthly and revoked instantly if criteria stop
-              being met.
+              <div className="grid3">
+                {TIER_CARDS.map((t) => {
+                  const pill = tierPill(t.n, t.key);
+                  const canApply = vm.tierRank < t.n && !vm.pendingTiers.includes(t.key);
+                  return (
+                    <div key={t.key} className={`card${vm.tierRank === t.n ? " tier-active" : ""}`}>
+                      <span className={`pill ${pill.cls}`}>{pill.label}</span>
+                      <h3 style={{ marginTop: ".7rem" }}>{t.title}</h3>
+                      {t.key === "id_verified" && <p>ABN matched, licence confirmed with VBA, details validated.</p>}
+                      {t.key === "buildsafe_verified" && (
+                        <p>
+                          Insurance confirmed, 12 months of clean public records, re-checked monthly. Badge live on your
+                          profile &amp; job posts.
+                        </p>
+                      )}
+                      {t.key === "track_record" && (
+                        <p>
+                          Needs 50 verified reviews incl. subbie payment ratings. You have {vm.reviewCount}.
+                        </p>
+                      )}
+                      <ul className="criteria">
+                        {t.criteria.map((c) => (
+                          <li key={c}>{c}</li>
+                        ))}
+                      </ul>
+                      {(canApply || (t.key === "track_record" && vm.reviewCount < 50)) && (
+                        <div className="actions" style={{ marginTop: "var(--s3)" }}>
+                          {t.key === "track_record" && vm.reviewCount < 50 && (
+                            <button
+                              className="btn btn-p btn-s"
+                              onClick={() => toast("Review invites sent to your last 9 completed jobs")}
+                            >
+                              Request reviews →
+                            </button>
+                          )}
+                          {canApply && (
+                            <button
+                              {...busyBtn(`tier:${t.key}`, `btn ${t.key === "track_record" ? "btn-g" : "btn-p"} btn-s`)}
+                              onClick={() => applyTier(t.key)}
+                            >
+                              Apply for Tier {t.n} →
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="hint">
+                Criteria are published for every tier. Badges are re-checked monthly and revoked instantly if criteria stop
+                being met.
+              </div>
             </div>
           </div>
 
@@ -815,10 +929,10 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                 <div key={r.id}>
                   <div className="review">
                     <div className="rt">
-                      <span className="avatar" style={{ background: "#2E5E8F" }}>{r.initials}</span>
+                      <span className="avatar" style={{ background: "var(--av-1)" }}>{r.initials}</span>
                       <div>
-                        <b style={{ fontSize: ".88rem" }}>{r.name}</b>{" "}
-                        <span className="pill navy" style={{ marginLeft: ".3rem" }}>{r.roleLabel}</span>
+                        <b>{r.name}</b>{" "}
+                        <span className="pill navy">{r.roleLabel}</span>
                       </div>
                       <span style={{ marginLeft: "auto" }}>
                         <Stars rating={r.rating} />
@@ -835,25 +949,28 @@ export default function BuilderApp({ vm }: { vm: BuilderVM }) {
                   </div>
                   {!r.reply && (
                     <form
-                      className="card form"
-                      style={{ padding: "1.3rem", marginTop: ".8rem" }}
+                      className="card form flat"
+                      style={{ marginTop: "var(--s3)" }}
                       onSubmit={(e) => submitReply(e, r.id)}
                     >
                       <label>
                         Respond to &ldquo;{r.text.length > 44 ? `${r.text.slice(0, 44)}…` : r.text}&rdquo;
                         <textarea name="reply" placeholder="Write a public reply…" required />
                       </label>
-                      <button className="btn btn-d btn-s" style={{ justifySelf: "start" }} disabled={busy}>
-                        Post reply
-                      </button>
+                      <div className="actions">
+                        <button {...busyBtn(`reply:${r.id}`, "btn btn-d btn-s")}>
+                          Post reply
+                        </button>
+                      </div>
                     </form>
                   )}
                 </div>
               ))}
               {vm.reviews.length === 0 && (
-                <div className="card">
-                  <p>No reviews yet. Reviews are two-way and verified — customers and subbies review you, you reply publicly.</p>
-                </div>
+                <EmptyState
+                  headline="No reviews yet"
+                  body="Reviews are two-way and verified — customers and subbies review you, you reply publicly."
+                />
               )}
             </div>
           </div>

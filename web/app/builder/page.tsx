@@ -24,8 +24,9 @@ const TIER_LABEL: Record<string, string> = {
   track_record: "Verified + Track Record",
 };
 const ROLE_LABEL: Record<string, string> = { homeowner: "Homeowner", subcontractor: "Subcontractor", builder: "Builder" };
-/* avatar colours from the prototype: risk #E5484D · watch #E9950C · ok navy-blue */
-const AV: Record<string, string> = { risk: "#E5484D", watch: "#E9950C", ok: "#2E5E8F" };
+/* avatar colours: status triad tokens + neutral steel blue (design-system MASTER §2 —
+ * risk-keyed avatars are allowed here: this is a private, subscriber-gated surface) */
+const AV: Record<string, string> = { risk: "var(--risk)", watch: "var(--watch)", ok: "var(--av-1)" };
 const KPI_CLS: Record<string, string> = { risk: "risk", watch: "or", ok: "ok" };
 
 export default async function BuilderPage() {
@@ -135,17 +136,17 @@ export default async function BuilderPage() {
     if (!s.insuranceExpiry) {
       sub2 = "Insurance expiry not on file — add it to track renewals";
       pill = { label: "CHECK", cls: "watch" };
-      avatarBg = "#E9950C";
+      avatarBg = "var(--watch)";
     } else {
       const days = Math.ceil((s.insuranceExpiry.getTime() - now) / 86400000);
       if (days < 0) {
         sub2 = `Insurance expired ${fmtDate(s.insuranceExpiry)}`;
         pill = { label: "EXPIRED", cls: "risk" };
-        avatarBg = "#E5484D";
+        avatarBg = "var(--risk)";
       } else if (days <= 60) {
         sub2 = `Insurance renewal due in ${days} days`;
         pill = { label: "RENEW", cls: "watch" };
-        avatarBg = "#E9950C";
+        avatarBg = "var(--watch)";
       } else {
         const mm = String(s.insuranceExpiry.getMonth() + 1).padStart(2, "0");
         sub2 = `Insurance current · exp ${mm}/${s.insuranceExpiry.getFullYear()}`;
