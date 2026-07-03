@@ -2,10 +2,11 @@
 /** Customer app shell — ported 1:1 from site/app-customer.html (sbtn/panel tabs,
  *  mobile burger, prototype markup + copy). All mutations go through API routes.
  *  Customers see positive/neutral info only — verified badge or a neutral pill. */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Art from "@/components/Art";
+import EmptyState from "@/components/EmptyState";
 import Stars from "@/components/Stars";
 import { toast } from "@/components/Toast";
 import { initials, timeAgo } from "@/lib/format";
@@ -91,7 +92,11 @@ function BuilderCard({
 }) {
   return (
     <div className="bcard rv">
-      <Art kind={b.artKind} label={b.location} />
+      {/* .photo recipe over the Art scene — company-specific cover photos arrive in R4.
+          16:8 header ratio is the kept bcard spec (promote `.bcard .photo` to app.css). */}
+      <div className="photo" style={{ aspectRatio: "16 / 8", borderRadius: 0 }} aria-hidden="true">
+        <Art kind={b.artKind} label={b.location} style={{ position: "absolute", inset: 0 }} />
+      </div>
       <div className="bod">
         <div className="nm">
           <div>
@@ -121,12 +126,13 @@ function BuilderCard({
         <div className="cta">
           <Link className="btn btn-d btn-s" href={`/b/${b.slug}`}>View profile</Link>
           <button
-            className="btn btn-g btn-s"
+            className={"btn btn-g btn-s" + (busy ? " busy" : "")}
             onClick={() => onQuote(b)}
             disabled={busy}
+            aria-busy={busy || undefined}
             aria-label={`Request quote from ${b.name}`}
           >
-            Request quote
+            {busy ? "Sending…" : "Request quote"}
           </button>
         </div>
       </div>
@@ -174,7 +180,7 @@ export default function CustomerApp({
       toast("Quote request sent to " + b.name + " — they'll reply in-app");
       router.refresh();
     } catch (err) {
-      toast(msg(err));
+      toast(msg(err), { kind: "error" });
     } finally {
       setQuoteBusy(null);
     }
@@ -199,6 +205,7 @@ export default function CustomerApp({
     } catch {
       setChkFail(true);
       setChkBusy(false);
+      toast("No match found — try Harbourline, Bassline, Redgum or Southpoint", { kind: "error" });
     }
   }
 
@@ -208,22 +215,52 @@ export default function CustomerApp({
     window.scrollTo({ top: 0 });
   }
 
+  /* MASTER §7 mobile drawer contract: scrim + Escape-close + body scroll lock,
+     focus returned to the burger. */
+  const burgerRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!sideOpen) return;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setSideOpen(false);
+        burgerRef.current?.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [sideOpen]);
+
   return (
     <>
       <div className="appbar">
         <button
-          className="burger" style={{ display: "flex" }} aria-label="Menu"
+          ref={burgerRef}
+          className="burger" aria-label="Menu"
           aria-expanded={sideOpen} onClick={() => setSideOpen(!sideOpen)}
         >
-          <span style={{ background: "#fff" }}></span>
-          <span style={{ background: "#fff" }}></span>
-          <span style={{ background: "#fff" }}></span>
+          <span></span>
+          <span></span>
+          <span></span>
         </button>
-        <b style={{ fontFamily: "var(--fd)" }}>BuildSafe · Customer</b>
-        <Link href="/" className="mono" style={{ fontSize: ".62rem", color: "#9DB0CC" }}>EXIT</Link>
+        <b>BuildSafe · Customer</b>
+        <Link href="/" className="exit">EXIT</Link>
       </div>
 
       <div className="app">
+        {sideOpen ? (
+          <button
+            className="side-scrim"
+            aria-label="Close menu"
+            onClick={() => {
+              setSideOpen(false);
+              burgerRef.current?.focus();
+            }}
+          />
+        ) : null}
         <aside className={"side" + (sideOpen ? " open" : "")}>
           <Link className="logo" href="/">
             <span className="logo-mark">
@@ -246,7 +283,7 @@ export default function CustomerApp({
             </button>
           ))}
           <div className="me">
-            <span className="avatar" style={{ background: "#2E5E8F" }}>{initials(me.name)}</span>
+            <span className="avatar" style={{ background: "var(--av-1)" }}>{initials(me.name)}</span>
             <div>
               <b>{me.name}</b>
               <span>{me.subline}</span>
@@ -261,11 +298,11 @@ export default function CustomerApp({
             <div className="filters">
               <input
                 type="text"
+                className="w-m"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="Search builders…"
                 aria-label="Search builders"
-                style={{ maxWidth: 260 }}
               />
               {FILTER_CHIPS.map((c) => (
                 <button
@@ -278,21 +315,37 @@ export default function CustomerApp({
                 </button>
               ))}
             </div>
-            <div className="grid3" id="dir">
-              {list.map((b) => (
-                <BuilderCard key={b.id} b={b} busy={quoteBusy === b.id} onQuote={requestQuote} />
-              ))}
-              {list.length === 0 ? (
-                <div className="card">
-                  <h3>No matches</h3>
-                  <p>
-                    Try clearing filters — or check any builder by ABN in the Deposit-safety
-                    tab; they don&apos;t need a profile for you to check them.
-                  </p>
-                </div>
-              ) : null}
-            </div>
-            <p className="hint" style={{ marginTop: "1rem" }}>
+            {list.length === 0 ? (
+              <EmptyState
+                icon={
+                  <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+                    <circle cx="31" cy="31" r="17" stroke="currentColor" strokeWidth="2.5" />
+                    <path d="M24 31a7 7 0 017-7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    <path d="M44 44l14 14" stroke="var(--orange)" strokeWidth="2.5" strokeLinecap="round" />
+                  </svg>
+                }
+                headline="No matches"
+                body="Try clearing filters — or check any builder by ABN in the Deposit-safety tab; they don't need a profile for you to check them."
+                cta={
+                  <button
+                    className="btn btn-g"
+                    onClick={() => {
+                      setQ("");
+                      setFilter("all");
+                    }}
+                  >
+                    Clear filters
+                  </button>
+                }
+              />
+            ) : (
+              <div className="grid3" id="dir">
+                {list.map((b) => (
+                  <BuilderCard key={b.id} b={b} busy={quoteBusy === b.id} onQuote={requestQuote} />
+                ))}
+              </div>
+            )}
+            <p className="hint" style={{ marginTop: "var(--s4)" }}>
               Ratings include reviews from the subbies each builder pays — a trust signal no
               other directory has.
             </p>
@@ -302,7 +355,7 @@ export default function CustomerApp({
           <div className={"panel" + (tab === "c-check" ? " on" : "")} id="c-check">
             <div className="topbar"><h2>Deposit-safety check</h2><span className="pill ok">FREE FOREVER</span></div>
             <div className="grid2">
-              <form className="card form" style={{ padding: "1.6rem" }} id="chk-form" onSubmit={runCheck}>
+              <form className="card form" id="chk-form" onSubmit={runCheck}>
                 <label>
                   Builder name or ABN
                   <input
@@ -321,9 +374,15 @@ export default function CustomerApp({
                     placeholder="e.g. 35000"
                   />
                 </label>
-                <button className="btn btn-p btn-lg" style={{ justifySelf: "start" }} disabled={chkBusy}>
-                  Run check →
-                </button>
+                <div className="actions">
+                  <button
+                    className={"btn btn-p btn-lg" + (chkBusy ? " busy" : "")}
+                    disabled={chkBusy}
+                    aria-busy={chkBusy || undefined}
+                  >
+                    {chkBusy ? "Checking…" : "Run check →"}
+                  </button>
+                </div>
                 <p className="hint">
                   Pulls company status, licence standing and adverse public records into one
                   plain-English answer — with sources.
@@ -358,18 +417,38 @@ export default function CustomerApp({
             <div className="topbar"><h2>My quote requests</h2></div>
             <div className="list" id="reqs">
               {requests.length === 0 ? (
-                <div className="card">
-                  <p>
-                    No requests yet — find a builder and tap <b>Request quote</b>. They reply
-                    here with their Verified status attached.
-                  </p>
-                </div>
+                <EmptyState
+                  icon={
+                    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+                      <rect x="10" y="18" width="52" height="38" rx="6" stroke="currentColor" strokeWidth="2.5" />
+                      <path
+                        d="M13 22l23 19 23-19"
+                        stroke="var(--orange)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  }
+                  headline="No requests yet"
+                  body={
+                    <>
+                      Find a builder and tap <b>Request quote</b>. They reply here with their
+                      Verified status attached.
+                    </>
+                  }
+                  cta={
+                    <button className="btn btn-p" onClick={() => pick("c-find")}>
+                      Find a builder
+                    </button>
+                  }
+                />
               ) : (
                 requests.map((r) => {
                   const pill = REQ_PILL[r.status];
                   return (
                     <div className="item" key={r.id}>
-                      <span className="avatar" style={{ background: "#2E5E8F" }}>{initials(r.companyName)}</span>
+                      <span className="avatar" style={{ background: "var(--av-1)" }}>{initials(r.companyName)}</span>
                       <div className="grow">
                         <b>Quote request — {r.companyName}</b>
                         <span className="sub2" suppressHydrationWarning>

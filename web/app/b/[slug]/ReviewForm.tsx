@@ -27,22 +27,24 @@ export default function ReviewForm({
 
   if (!viewer) {
     return (
-      <div className="card form" style={{ padding: "1.3rem", marginTop: "1rem" }}>
-        <b style={{ fontFamily: "var(--fd)" }}>Write a review</b>
+      <div className="card flat form" style={{ marginTop: "var(--s4)" }}>
+        <h3>Write a review</h3>
         <p className="hint" style={{ margin: 0 }}>
           Reviews get a Verified badge when we can match them to a real job on the platform — sign in to write one.
         </p>
-        <a className="btn btn-d" style={{ justifySelf: "start" }} href="/login">
-          Sign in to write a review
-        </a>
+        <div className="actions">
+          <a className="btn btn-d" href="/login">
+            Sign in to write a review
+          </a>
+        </div>
       </div>
     );
   }
 
   if (viewer.role === "builder" || viewer.role === "admin") {
     return (
-      <div className="card form" style={{ padding: "1.3rem", marginTop: "1rem" }}>
-        <b style={{ fontFamily: "var(--fd)" }}>Write a review</b>
+      <div className="card flat form" style={{ marginTop: "var(--s4)" }}>
+        <h3>Write a review</h3>
         <p className="hint" style={{ margin: 0 }}>
           {viewer.role === "builder"
             ? "Builders review the tradies they've hired — from your Builder app, after a job. Customers and subbies review builder companies here."
@@ -82,13 +84,13 @@ export default function ReviewForm({
       setPaidOnTime(null);
       router.refresh();
     } else {
-      toast(j.error || "Could not submit the review");
+      toast(j.error || "Could not submit the review", { kind: "error" });
     }
   }
 
   return (
-    <form className="card form" style={{ padding: "1.3rem", marginTop: "1rem" }} onSubmit={onSubmit}>
-      <b style={{ fontFamily: "var(--fd)" }}>Write a review</b>
+    <form className="card flat form" style={{ marginTop: "var(--s4)" }} onSubmit={onSubmit}>
+      <h3>Write a review</h3>
       <div className="f2">
         <label>
           Your name
@@ -139,9 +141,11 @@ export default function ReviewForm({
           </select>
         </label>
       ) : null}
-      <button className="btn btn-d" style={{ justifySelf: "start" }} disabled={busy}>
-        Submit review
-      </button>
+      <div className="actions">
+        <button className={"btn btn-d" + (busy ? " busy" : "")} disabled={busy} aria-busy={busy || undefined}>
+          {busy ? "Submitting…" : "Submit review"}
+        </button>
+      </div>
     </form>
   );
 }

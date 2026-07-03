@@ -5,7 +5,10 @@ import { db, tables } from "@/lib/db";
 import { currentUser } from "@/lib/session";
 import { formatAbn, fmtDate, initials, ratingX10ToNumber } from "@/lib/format";
 import Art from "@/components/Art";
+import EmptyState from "@/components/EmptyState";
+import SitePhoto from "@/components/SitePhoto";
 import Stars from "@/components/Stars";
+import { defaultCoverSlot } from "@/lib/photos";
 import ProfileNav from "./ProfileNav";
 import ProfileActions from "./ProfileActions";
 import ReviewForm from "./ReviewForm";
@@ -29,7 +32,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 /* Neutral avatar palette — deterministic per company, never keyed to risk. */
-const AV_COLORS = ["#2E5E8F", "#149E5F", "#B87333", "#41546B"];
+const AV_COLORS = ["var(--av-1)", "var(--av-2)", "var(--av-3)", "var(--av-4)"];
 
 export async function generateMetadata({
   params,
@@ -93,19 +96,27 @@ export default async function BuilderProfilePage({
 
   return (
     <>
-      <style>{`.cover{height:230px;border-radius:26px;overflow:hidden;position:relative;margin-bottom:-56px}.cover .art{height:100%;border-radius:26px}.pwrap{width:min(980px,92%);margin-inline:auto;padding:2rem 0 4rem}`}</style>
       <ProfileNav />
 
       <div className="pwrap">
-        <div className="cover">
-          <Art kind={company.artKind} label={`${company.location ?? company.state ?? "VIC"} · portfolio`} />
+        {/* §11.3 profile hero: 21/9 default cover (rotated by company id, SVG art
+            fallback until the photo pipeline runs) with the .phead card overlapping.
+            display:grid stretches SitePhoto's aspect-ratio figure to fill the
+            clamped cover height — promote to `.cover{display:grid}` in app.css. */}
+        <div className="cover" style={{ display: "grid" }}>
+          <SitePhoto
+            slot={defaultCoverSlot(company.id)}
+            className="photo"
+            priority
+            caption={`${company.location ?? company.state ?? "VIC"} · portfolio`}
+          />
         </div>
-        <div className="phead" style={{ position: "relative", zIndex: 2 }}>
+        <div className="phead phead-hero">
           <span className="avatar av-xl" style={{ background: avColor }}>
             {initials(company.name)}
           </span>
           <div className="grow">
-            <div style={{ display: "flex", alignItems: "center", gap: ".7rem", flexWrap: "wrap" }}>
+            <div className="actions">
               <h2>{company.name}</h2>
               {verified ? (
                 <span className="vbadge">
@@ -118,12 +129,30 @@ export default async function BuilderProfilePage({
                 <span className="pill navy">NOT YET VERIFIED</span>
               )}
             </div>
-            <div className="mono" style={{ fontSize: ".68rem", color: "var(--slate2)", marginTop: ".3rem" }}>
+            <div className="micro" style={{ marginTop: "var(--s1)" }}>
               {metaLine}
             </div>
             <div className="pstats">
               <div>
-                <b>{rating != null ? `${rating} ★` : "New"}</b>
+                <b>
+                  {rating != null ? (
+                    <>
+                      {rating}{" "}
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="var(--star)"
+                        aria-hidden="true"
+                        style={{ verticalAlign: "-.08em" }}
+                      >
+                        <path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z" />
+                      </svg>
+                    </>
+                  ) : (
+                    "New"
+                  )}
+                </b>
                 <span>{company.reviewCount} verified reviews</span>
               </div>
               <div>
@@ -136,7 +165,7 @@ export default async function BuilderProfilePage({
               </div>
             </div>
           </div>
-          <div style={{ display: "grid", gap: ".5rem" }}>
+          <div className="list">
             <ProfileActions
               companyId={company.id}
               companyName={company.name}
@@ -155,13 +184,13 @@ export default async function BuilderProfilePage({
           </div>
         </div>
 
-        <div className="grid2" style={{ marginTop: "1.4rem", alignItems: "start" }}>
+        <div className="grid2" style={{ marginTop: "var(--s4)", alignItems: "start" }}>
           <div>
             <h3 style={{ margin: ".6rem 0 .8rem" }}>Public record — with sources</h3>
             <div className="list">
-              <div className="item alertcard c" style={{ boxShadow: "var(--sh1)" }}>
+              <div className="item alertcard c">
                 <div className="grow">
-                  <b style={{ fontSize: ".9rem" }}>
+                  <b>
                     ABN {formatAbn(company.abn)} — registered{company.abnStatus ? ` · ${company.abnStatus}` : ""}
                     {company.entityType ? ` · ${company.entityType}` : ""}
                   </b>
@@ -175,9 +204,9 @@ export default async function BuilderProfilePage({
                 <span className="pill navy">FACT</span>
               </div>
               {company.licenceNumber ? (
-                <div className="item alertcard c" style={{ boxShadow: "var(--sh1)" }}>
+                <div className="item alertcard c">
                   <div className="grow">
-                    <b style={{ fontSize: ".9rem" }}>
+                    <b>
                       Builder licence {company.licenceNumber}
                       {company.licenceStatus ? ` — ${company.licenceStatus}` : ""}
                     </b>
@@ -192,9 +221,9 @@ export default async function BuilderProfilePage({
                 </div>
               ) : null}
               {verified ? (
-                <div className="item alertcard c" style={{ boxShadow: "var(--sh1)" }}>
+                <div className="item alertcard c">
                   <div className="grow">
-                    <b style={{ fontSize: ".9rem" }}>
+                    <b>
                       {TIER_LABEL[company.tier]}
                       {company.tierGrantedAt ? ` — granted ${fmtDate(company.tierGrantedAt)}` : ""} · re-checked monthly
                     </b>
@@ -207,29 +236,40 @@ export default async function BuilderProfilePage({
               ) : null}
             </div>
             {lastChecked ? (
-              <p className="mono" style={{ fontSize: ".68rem", color: "var(--slate2)", marginTop: ".6rem" }}>
+              <p className="micro" style={{ marginTop: "var(--s2)" }}>
                 LAST CHECKED {lastChecked}
               </p>
             ) : null}
-            <p className="hint" style={{ marginTop: ".4rem" }}>
+            <p className="hint" style={{ marginTop: "var(--s1)" }}>
               BuildSafe monitors public records and flags signals. Detailed signal history sits with
               subscribers inside the Tradie &amp; Builder apps — this public page shows registration
               and licence facts only.
             </p>
 
             <h3 style={{ margin: "1.8rem 0 .8rem" }}>Recent work</h3>
-            <div className="portfolio" style={{ gridTemplateColumns: "1fr 1fr" }}>
-              <Art kind={company.artKind} label={`Completed · ${company.location ?? company.state ?? "VIC"}`} />
-              <Art kind="tile" label="Wet areas" />
-              <Art kind="frame" label="In progress" />
-              <Art kind="house" label="Handover" />
+            {/* §11.1 .photo recipe over the Art scenes — company-specific photos arrive in R4;
+                the wrapper keeps the 16:10 photo-card look today (tiles are decorative). */}
+            <div className="portfolio two">
+              {(
+                [
+                  [company.artKind, `Completed · ${company.location ?? company.state ?? "VIC"}`],
+                  ["tile", "Wet areas"],
+                  ["frame", "In progress"],
+                  ["house", "Handover"],
+                ] as const
+              ).map(([kind, label]) => (
+                <div className="photo" key={label}>
+                  <Art kind={kind} label={label} style={{ position: "absolute", inset: 0 }} />
+                </div>
+              ))}
             </div>
 
-            <details className="card" style={{ padding: "1.3rem", marginTop: "1.8rem" }}>
+            <details className="card flat" style={{ marginTop: "var(--stack-gap)" }}>
               <summary style={{ cursor: "pointer", fontFamily: "var(--fd)", fontWeight: 600 }}>
                 Verification badges — published criteria
               </summary>
-              <ul style={{ margin: ".8rem 0 0", paddingLeft: "1.1rem", display: "grid", gap: ".5rem", fontSize: ".85rem" }}>
+              {/* prose bullets, not the icon .criteria list — needs a shared `.card details` recipe (noted in report) */}
+              <ul style={{ margin: "var(--s2) 0 0", paddingLeft: "1.1rem", display: "grid", gap: "var(--s2)", fontSize: ".85rem" }}>
                 <li>
                   <b>ID Verified</b> — director government ID verified and matched to the ABN.
                 </li>
@@ -242,7 +282,7 @@ export default async function BuilderProfilePage({
                   history and verified reviews on the platform.
                 </li>
               </ul>
-              <p className="hint" style={{ marginTop: ".8rem", marginBottom: 0 }}>
+              <p className="hint" style={{ marginTop: "var(--s2)", marginBottom: 0 }}>
                 Every badge is re-checked monthly and revoked immediately if its criteria stop being met.
               </p>
             </details>
@@ -254,25 +294,43 @@ export default async function BuilderProfilePage({
             </h3>
             <div className="list">
               {reviews.length === 0 ? (
-                <div className="card">
-                  <p>No reviews yet — be the first. Reviews we can match to a real job on the platform carry a Verified badge.</p>
-                </div>
+                <EmptyState
+                  icon={
+                    <svg viewBox="0 0 72 72" fill="none" aria-hidden="true">
+                      <path
+                        d="M36 12l6.5 13.2 14.5 2.1-10.5 10.2 2.5 14.4L36 45.1 23 51.9l2.5-14.4L15 27.3l14.5-2.1z"
+                        stroke="currentColor"
+                        strokeWidth="2.5"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M58 12l1.6 3.3 3.6.5-2.6 2.5.6 3.6-3.2-1.7"
+                        stroke="var(--orange)"
+                        strokeWidth="2.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  }
+                  headline="No reviews yet — be the first"
+                  body="Reviews we can match to a real job on the platform carry a Verified badge."
+                />
               ) : (
                 reviews.map((r) => {
                   const authorName = r.author?.name ?? "BuildSafe member";
                   return (
                     <div className="review" key={r.id}>
                       <div className="rt">
-                        <span className="avatar" style={{ background: "#2E5E8F" }}>
+                        <span className="avatar" style={{ background: "var(--av-1)" }}>
                           {initials(authorName)}
                         </span>
-                        <div>
-                          <b style={{ fontSize: ".88rem" }}>{authorName}</b>{" "}
-                          <span className="pill navy" style={{ marginLeft: ".3rem" }}>
+                        <div className="actions" style={{ gap: ".35rem" }}>
+                          <b>{authorName}</b>
+                          <span className="pill navy">
                             {ROLE_LABEL[r.authorRole] ?? r.authorRole}
                           </span>
                           {r.verified ? (
-                            <span className="pill ok" style={{ marginLeft: ".3rem" }}>
+                            <span className="pill ok">
                               Verified job
                             </span>
                           ) : null}
@@ -300,7 +358,7 @@ export default async function BuilderProfilePage({
             />
           </div>
         </div>
-        <p className="f-legal" style={{ marginTop: "2.5rem" }}>
+        <p className="f-legal" style={{ marginTop: "var(--s7)" }}>
           Public-record signals are facts from published sources (linked). Status ratings are
           BuildSafe&rsquo;s opinion based on those disclosed records. Reviews carry a Verified
           badge where we can match them to a real transaction on the platform; builders may respond
