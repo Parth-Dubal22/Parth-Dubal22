@@ -32,6 +32,9 @@ function authorized(req: Request): boolean {
   return req.headers.get("authorization") === `Bearer ${secret}`;
 }
 
+// NOT rate-limited on purpose: this endpoint is bearer-protected (CRON_SECRET,
+// see authorized() above) and invoked by the platform scheduler, not the public.
+// A limiter here would only risk throttling legitimate scheduled runs.
 export async function GET(req: Request) {
   if (!authorized(req)) {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });

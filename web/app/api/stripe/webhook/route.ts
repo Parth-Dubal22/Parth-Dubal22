@@ -18,6 +18,10 @@ export const runtime = "nodejs";
 type Plan = "tradie_watch" | "builder_pro";
 const isPlan = (v: unknown): v is Plan => v === "tradie_watch" || v === "builder_pro";
 
+// NOT rate-limited on purpose: this endpoint is authenticated by Stripe's
+// signature (constructEvent below), and throttling it risks dropping legitimate
+// Stripe webhook events (Stripe retries, but a 429 during a burst could delay
+// subscription state sync). Signature verification is the guard here.
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_WEBHOOK_SECRET;
   const signature = req.headers.get("stripe-signature");

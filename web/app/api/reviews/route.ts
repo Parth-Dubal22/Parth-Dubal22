@@ -11,6 +11,7 @@ import { z } from "zod";
 import { and, eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 import { recomputeCompanyRating } from "@/lib/reviews";
 
 const schema = z.object({
@@ -36,6 +37,9 @@ function bad(error: string, status = 400) {
 export async function POST(req: Request) {
   const user = await apiUser();
   if (!user) return bad("Sign in to write a review.", 401);
+
+  const rl = await rateLimit(userKey("reviews-post", user, req), { limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   let raw: unknown;
   try {

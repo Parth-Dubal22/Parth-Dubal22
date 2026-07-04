@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { cleanAbn, slugify } from "@/lib/format";
 import { findCategory, categorySlugForTradeText, CATEGORY_TO_TRADE } from "@/lib/data/categories";
+import { rateLimit, clientIp, tooMany } from "@/lib/rate-limit";
 
 /** Keep only valid TOP-LEVEL taxonomy slugs (dedupe, cap at 12). */
 function cleanCategorySlugs(slugs: string[] | undefined): string[] {
@@ -56,6 +57,13 @@ function bad(error: string, status = 400) {
 class AlreadyClaimedError extends Error {}
 
 export async function POST(req: Request) {
+  // Public, IP-keyed (strict): 10 signups / hour / IP. Fail-open.
+  const rl = await rateLimit(`register:ip:${clientIp(req)}`, {
+    limit: 10,
+    windowMs: 60 * 60 * 1000,
+  });
+  if (!rl.ok) return tooMany(rl.retryAfter);
+
   let raw: unknown;
   try {
     raw = await req.json();

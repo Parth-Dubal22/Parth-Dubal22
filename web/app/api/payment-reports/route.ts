@@ -8,6 +8,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 
 const schema = z.object({
   companyId: z.number().int().positive(),
@@ -22,6 +23,9 @@ function bad(error: string, status = 400) {
 export async function POST(req: Request) {
   const user = await apiUser("tradie");
   if (!user) return bad("Sign in as a tradie to report payment behaviour.", 401);
+
+  const rl = await rateLimit(userKey("payment-reports", user, req), { limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   let raw: unknown;
   try {

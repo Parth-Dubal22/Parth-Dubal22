@@ -3,6 +3,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 
 /**
  * POST /api/jobs/[id]/apply — tradie only.
@@ -25,6 +26,9 @@ export async function POST(
 ) {
   const user = await apiUser("tradie");
   if (!user) return bad("Sign in as a tradie to apply — it's always free.", 401);
+
+  const rl = await rateLimit(userKey("jobs-apply", user, req), { limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   const { id } = await params;
   const jobId = Number(id);

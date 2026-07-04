@@ -7,6 +7,7 @@ import { NextResponse } from "next/server";
 import { and, eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 
 const TIERS = ["id_verified", "buildsafe_verified", "track_record"] as const;
 type Tier = (typeof TIERS)[number];
@@ -17,6 +18,9 @@ export async function POST(req: Request) {
   if (!user) {
     return NextResponse.json({ ok: false, error: "Not authorised" }, { status: 401 });
   }
+
+  const rl = await rateLimit(userKey("verification-request", user, req), { limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   let tier: string | undefined;
   try {

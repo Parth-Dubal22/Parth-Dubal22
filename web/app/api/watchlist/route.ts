@@ -3,6 +3,7 @@ import { z } from "zod";
 import { and, eq, ilike } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 import { canSeeRiskDetail } from "@/lib/access";
 import { cleanAbn } from "@/lib/format";
 
@@ -29,6 +30,9 @@ const escapeLike = (s: string) => s.replace(/[\\%_]/g, (m) => `\\${m}`);
 export async function POST(req: Request) {
   const user = await apiUser("tradie", "builder");
   if (!user) return bad("Sign in as a tradie or builder to use watchlists.", 401);
+
+  const rl = await rateLimit(userKey("watchlist", user, req), { limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   let raw: unknown;
   try {
@@ -90,6 +94,9 @@ export async function POST(req: Request) {
 export async function DELETE(req: Request) {
   const user = await apiUser("tradie", "builder");
   if (!user) return bad("Sign in as a tradie or builder to use watchlists.", 401);
+
+  const rl = await rateLimit(userKey("watchlist", user, req), { limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   const companyId = Number(new URL(req.url).searchParams.get("companyId"));
   if (!Number.isInteger(companyId) || companyId <= 0) {

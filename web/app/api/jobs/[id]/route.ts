@@ -3,6 +3,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 
 /**
  * PATCH /api/jobs/[id] — job owner (builder) or admin.
@@ -23,6 +24,9 @@ export async function PATCH(
 ) {
   const user = await apiUser("builder");
   if (!user) return bad("Sign in as a builder to manage your jobs.", 401);
+
+  const rl = await rateLimit(userKey("jobs-patch", user, req), { limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   const { id } = await params;
   const jobId = Number(id);

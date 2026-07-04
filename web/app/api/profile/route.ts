@@ -3,6 +3,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 import { findCategory } from "@/lib/data/categories";
 
 /** Keep only valid TOP-LEVEL taxonomy slugs (dedupe, cap at 12). Index 0 = primary. */
@@ -72,6 +73,9 @@ function bad(error: string, status = 400) {
 export async function PUT(req: Request) {
   const user = await apiUser();
   if (!user) return bad("Sign in to update your profile.", 401);
+
+  const rl = await rateLimit(userKey("profile", user, req), { limit: 60, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   let raw: unknown;
   try {

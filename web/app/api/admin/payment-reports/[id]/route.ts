@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 
 function bad(error: string, status = 400) {
   return NextResponse.json({ ok: false, error }, { status });
@@ -13,6 +14,10 @@ function bad(error: string, status = 400) {
 export async function POST(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const user = await apiUser("admin");
   if (!user) return bad("Admin only.", 401);
+
+  // Admins are trusted, but cap runaway loops. (POST takes _req; key on user id.)
+  const rl = await rateLimit(userKey("admin-payment-reports", user), { limit: 120, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   const { id } = await ctx.params;
   const reportId = Number(id);

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { eq } from "drizzle-orm";
 import { db, tables } from "@/lib/db";
 import { apiUser } from "@/lib/session";
+import { rateLimit, tooMany, userKey } from "@/lib/rate-limit";
 
 /**
  * POST /api/jobs — builder only.
@@ -32,6 +33,9 @@ function bad(error: string, status = 400) {
 export async function POST(req: Request) {
   const user = await apiUser("builder");
   if (!user) return bad("Sign in as a builder to post a job.", 401);
+
+  const rl = await rateLimit(userKey("jobs-post", user, req), { limit: 20, windowMs: 60_000 });
+  if (!rl.ok) return tooMany(rl.retryAfter);
 
   let raw: unknown;
   try {

@@ -1,17 +1,43 @@
 /** Seed — ports the prototype's js/data.js demo state into Postgres.
- *  Clearly sample data. Run: npm run db:seed */
+ *  Clearly sample data. Run: npm run db:seed
+ *
+ *  DEMO GATING (security): the *@demo.buildsafe logins, throwaway reviewer
+ *  accounts and the shared `demo1234` password are ONLY seeded when demo mode is
+ *  on. Demo mode is ON when SEED_DEMO=1, OR whenever NODE_ENV !== 'production'
+ *  (so local dev is unchanged). In production, unless you explicitly set
+ *  SEED_DEMO=1, this script seeds ONLY the category taxonomy and wipes nothing —
+ *  it never creates the demo logins or the shared password. */
 import { hash } from "bcryptjs";
 import { db, tables } from "../lib/db";
 import { sql } from "drizzle-orm";
 import { categorySlugForTradeText, TRADE_TO_CATEGORY } from "../lib/data/categories";
 import { seedCategories } from "./seed-categories";
 
+/** Demo accounts on only when explicitly opted in, or outside production. */
+const SEED_DEMO = process.env.SEED_DEMO === "1" || process.env.NODE_ENV !== "production";
+
 /** trades text[] → taxonomy top-level slugs (R5) — dedup, drop unmappable. */
 const slugsForTrades = (trades: string[]): string[] =>
   [...new Set(trades.map(categorySlugForTradeText).filter((s): s is string => !!s))];
 
+/** Production-safe path: seed ONLY the category taxonomy (upsert, no wipe, no
+ *  accounts). Used when demo mode is off so `npm run db:seed` is safe in prod. */
+async function seedReferenceDataOnly() {
+  console.log("Seeding BuildSafe reference data only (SEED_DEMO not set, NODE_ENV=production).");
+  console.log("  → NO demo accounts, NO demo password. Category taxonomy only.");
+  const catCount = await seedCategories();
+  console.log(`  categories: ${catCount}`);
+  console.log("Seed complete (reference data only).");
+  process.exit(0);
+}
+
 async function main() {
-  console.log("Seeding BuildSafe demo data…");
+  if (!SEED_DEMO) {
+    await seedReferenceDataOnly();
+    return;
+  }
+
+  console.log("Seeding BuildSafe demo data… (demo mode ON — demo accounts + demo1234 password)");
   // wipe (dev only) — categories are re-seeded from the taxonomy below
   await db.execute(sql`
     TRUNCATE users, companies, signals, watchlist_items, exposure_entries, alerts,
