@@ -1,9 +1,29 @@
 # BuildSafe — Pre-launch checklist
 
-Living doc. Sections 1–3 are engineering (mostly done in code); section 4 is the
-**lawyer sign-off gate** — do not go public until every ⛔ item is cleared by a
-qualified Australian tech/media lawyer (Master Plan §4: budget ~$1.5–3K, "the
-single best money you will spend").
+Living doc. Sections 1–4 are engineering; section 5 is the **lawyer sign-off gate** —
+do not go public until every ⛔ item is cleared by a qualified Australian tech/media
+lawyer (Master Plan §4: budget ~$1.5–3K, "the single best money you will spend").
+
+## Launch-readiness ledger (what's left, at a glance)
+
+| Item | State | Owner | Blocking launch? |
+|---|---|---|---|
+| Rate limiting (code) | ✅ done, in `main` | — | no |
+| Sentry wiring (code) | ✅ done (inert until DSN) | — | no |
+| Demo-credential gate (code) | ✅ done | — | no |
+| App build / lint / typecheck | ✅ green | — | no |
+| **Upstash Redis account + env vars** | ⚠️ not set | you | **yes** (else limiter is per-instance only) |
+| **Sentry account + DSN env vars** | ⚠️ not set | you | recommended, not hard |
+| **Deploy to Vercel + Neon** (see `DEPLOY.md`) | ⚠️ not done | you (or me, w/ creds) | **yes** |
+| **Neon PITR ≥ 7 days + one test restore** | ⚠️ unconfirmed | you | **yes** |
+| **Independent nightly `pg_dump` backup** | ⏸️ deferred — host TBD | you (then me) | recommended |
+| Onshore region (Neon + Vercel = AU) | ⚠️ set at deploy | you | **yes** (Privacy Act) |
+| Rotate all shared secrets post-dev | ⚠️ at deploy | you | **yes** |
+| Confirm 0 demo accounts on prod DB | ⚠️ at deploy | you | **yes** |
+| **`/terms`, `/privacy`, `/disclaimer` pages** | ⏸️ deferred — lawyer session | lawyer → then build | **yes** |
+| **Lawyer sign-off** (T&Cs, risk wording, reviews) | ⛔ not started | you + lawyer | **yes** |
+
+⏸️ = intentionally held per owner decision (lawyer produces the legal copy; backup host chosen later).
 
 ---
 
